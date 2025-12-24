@@ -1,0 +1,55 @@
+[
+  {
+    "id": "1766523972384_gh4RBrUwjwZymEYM59jyBjEfS3ygi4_m_L4obHezthI",
+    "tipo": "nuevo_curso",
+    "titulo": "¡Nuevo curso disponible!",
+    "mensaje": "Se ha publicado el curso \"Inducción Corporativa y SG-SST - Ladrillera Santafé\" en la categoría Seguridad. ¡Inscríbete ahora!",
+    "leida": false,
+    "fecha": "2025-12-23T21:06:12.384Z"
+  },
+  {
+    "id": "1764810900695_gh4RBrUwjwZymEYM59jyBjEfS3ygi4_m_L4obHezthI",
+    "tipo": "nuevo_curso",
+    "titulo": "¡Nuevo curso disponible!",
+    "mensaje": "Se ha publicado el curso \"Inducción Corporativa y SG-SST - Ladrillera Santafé\" en la categoría Seguridad. ¡Inscríbete ahora!",
+    "cursoId": "1d691a41-4888-4282-91d6-e543cdce8f27",
+    "leida": false,
+    "fecha": "2025-12-04T01:15:00.695Z"
+  },
+  {
+    "id": "1764810898246_gh4RBrUwjwZymEYM59jyBjEfS3ygi4_m_L4obHezthI",
+    "tipo": "nuevo_curso",
+    "titulo": "¡Nuevo curso disponible!",
+    "mensaje": "Se ha publicado el curso \"Inducción Corporativa y SG-SST - Ladrillera Santafé\" en la categoría Seguridad. ¡Inscríbete ahora!",
+    "cursoId": "be136fec-78bd-4339-a85b-0a29bb284b6a",
+    "leida": false,
+    "fecha": "2025-12-04T01:14:58.246Z"
+  },
+  {
+    "id": "1764810894859_gh4RBrUwjwZymEYM59jyBjEfS3ygi4_m_L4obHezthI",
+    "tipo": "nuevo_curso",
+    "titulo": "¡Nuevo curso disponible!",
+    "mensaje": "Se ha publicado el curso \"Inducción Corporativa y SG-SST - Ladrillera Santafé\" en la categoría Seguridad. ¡Inscríbete ahora!",
+    "cursoId": "993759c2-66ad-4d2d-8918-f81ef5f76dce",
+    "leida": false,
+    "fecha": "2025-12-04T01:14:54.859Z"
+  },
+  {
+    "id": "1764809056534_gh4RBrUwjwZymEYM59jyBjEfS3ygi4_m_L4obHezthI",
+    "tipo": "nuevo_curso",
+    "titulo": "¡Nuevo curso disponible!",
+    "mensaje": "Se ha publicado el curso \"Inducción Corporativa y SG-SST - Ladrillera Santafé\" en la categoría Seguridad. ¡Inscríbete ahora!",
+    "cursoId": "547e4449-1ab5-40fa-9511-cd179b18bbca",
+    "leida": false,
+    "fecha": "2025-12-04T00:44:16.534Z"
+  },
+  {
+    "id": "1764556694452_gh4RBrUwjwZymEYM59jyBjEfS3ygi4_m_L4obHezthI",
+    "tipo": "nuevo_curso",
+    "titulo": "¡Nuevo curso disponible!",
+    "mensaje": "Se ha publicado el curso \"Capacitación en Seguridad y Salud en el Trabajo\" en la categoría Seguridad. ¡Inscríbete ahora!",
+    "cursoId": "5817742d-270a-4396-994f-dd62fea4f1f0",
+    "leida": false,
+    "fecha": "2025-12-01T02:38:14.452Z"
+  }
+]

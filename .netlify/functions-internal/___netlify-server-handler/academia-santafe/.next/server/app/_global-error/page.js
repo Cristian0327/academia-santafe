@@ -1,0 +1,11 @@
+var R=require("../../chunks/ssr/[turbopack]_runtime.js")("server/app/_global-error/page.js")
+R.c("server/chunks/ssr/[root-of-the-server]__08719584._.js")
+R.c("server/chunks/ssr/academia-santafe_fea51013._.js")
+R.c("server/chunks/ssr/0d098_next_dist_fbd930c6._.js")
+R.c("server/chunks/ssr/[root-of-the-server]__0f6718e9._.js")
+R.c("server/chunks/ssr/0d098_0da27ec8._.js")
+R.c("server/chunks/ssr/0d098_151985e0._.js")
+R.c("server/chunks/ssr/academia-santafe_app_f8abca29._.js")
+R.c("server/chunks/ssr/academia-santafe__next-internal_server_app__global-error_page_actions_6345213b.js")
+R.m(34102)
+module.exports=R.m(34102).exports

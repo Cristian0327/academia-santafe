@@ -1,0 +1,193 @@
+{
+  "version": 3,
+  "pages404": true,
+  "caseSensitive": false,
+  "basePath": "",
+  "redirects": [
+    {
+      "source": "/:path+/",
+      "destination": "/:path+",
+      "internal": true,
+      "priority": true,
+      "statusCode": 308,
+      "regex": "^(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))/$"
+    }
+  ],
+  "headers": [],
+  "rewrites": {
+    "beforeFiles": [],
+    "afterFiles": [],
+    "fallback": []
+  },
+  "dynamicRoutes": [
+    {
+      "page": "/api/auth/[...nextauth]",
+      "regex": "^/api/auth/(.+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPnextauth": "nxtPnextauth"
+      },
+      "namedRegex": "^/api/auth/(?<nxtPnextauth>.+?)(?:/)?$"
+    },
+    {
+      "page": "/curso/[id]",
+      "regex": "^/curso/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/curso/(?<nxtPid>[^/]+?)(?:/)?$"
+    }
+  ],
+  "staticRoutes": [
+    {
+      "page": "/",
+      "regex": "^/(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/(?:/)?$"
+    },
+    {
+      "page": "/_global-error",
+      "regex": "^/_global\\-error(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_global\\-error(?:/)?$"
+    },
+    {
+      "page": "/_not-found",
+      "regex": "^/_not\\-found(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/admin",
+      "regex": "^/admin(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin(?:/)?$"
+    },
+    {
+      "page": "/admin/reportes",
+      "regex": "^/admin/reportes(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/reportes(?:/)?$"
+    },
+    {
+      "page": "/AdminCursos",
+      "regex": "^/AdminCursos(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/AdminCursos(?:/)?$"
+    },
+    {
+      "page": "/api/generar-preguntas",
+      "regex": "^/api/generar\\-preguntas(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/generar\\-preguntas(?:/)?$"
+    },
+    {
+      "page": "/api/notificaciones",
+      "regex": "^/api/notificaciones(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/notificaciones(?:/)?$"
+    },
+    {
+      "page": "/api/reportes-diarios",
+      "regex": "^/api/reportes\\-diarios(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/reportes\\-diarios(?:/)?$"
+    },
+    {
+      "page": "/api/user-profile",
+      "regex": "^/api/user\\-profile(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/user\\-profile(?:/)?$"
+    },
+    {
+      "page": "/api/user-profile/count",
+      "regex": "^/api/user\\-profile/count(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/user\\-profile/count(?:/)?$"
+    },
+    {
+      "page": "/api/youtube/transcripcion",
+      "regex": "^/api/youtube/transcripcion(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/youtube/transcripcion(?:/)?$"
+    },
+    {
+      "page": "/api/youtube/transcripcion-sin-api",
+      "regex": "^/api/youtube/transcripcion\\-sin\\-api(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/youtube/transcripcion\\-sin\\-api(?:/)?$"
+    },
+    {
+      "page": "/auth/error",
+      "regex": "^/auth/error(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/auth/error(?:/)?$"
+    },
+    {
+      "page": "/auth/signin",
+      "regex": "^/auth/signin(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/auth/signin(?:/)?$"
+    },
+    {
+      "page": "/categorias",
+      "regex": "^/categorias(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/categorias(?:/)?$"
+    },
+    {
+      "page": "/cursos",
+      "regex": "^/cursos(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/cursos(?:/)?$"
+    },
+    {
+      "page": "/dashboard",
+      "regex": "^/dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard(?:/)?$"
+    },
+    {
+      "page": "/dashboard/notificaciones",
+      "regex": "^/dashboard/notificaciones(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/notificaciones(?:/)?$"
+    },
+    {
+      "page": "/dashboard/panel",
+      "regex": "^/dashboard/panel(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/panel(?:/)?$"
+    },
+    {
+      "page": "/favicon.ico",
+      "regex": "^/favicon\\.ico(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/favicon\\.ico(?:/)?$"
+    },
+    {
+      "page": "/perfil",
+      "regex": "^/perfil(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/perfil(?:/)?$"
+    }
+  ],
+  "dataRoutes": [],
+  "rsc": {
+    "header": "rsc",
+    "varyHeader": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "prefetchHeader": "next-router-prefetch",
+    "didPostponeHeader": "x-nextjs-postponed",
+    "contentTypeHeader": "text/x-component",
+    "suffix": ".rsc",
+    "prefetchSuffix": ".prefetch.rsc",
+    "prefetchSegmentHeader": "next-router-segment-prefetch",
+    "prefetchSegmentSuffix": ".segment.rsc",
+    "prefetchSegmentDirSuffix": ".segments",
+    "clientParamParsing": false,
+    "dynamicRSCPrerender": false
+  },
+  "rewriteHeaders": {
+    "pathHeader": "x-nextjs-rewritten-path",
+    "queryHeader": "x-nextjs-rewritten-query"
+  }
+}
