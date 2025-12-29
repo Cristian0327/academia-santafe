@@ -2,9 +2,12 @@
 import { useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { Plus, Trash2, ChevronUp, ChevronDown, FileText, Video, CheckSquare, Book, AlertCircle } from 'lucide-react';
-import 'react-quill/dist/quill.snow.css';
+import { EditorState, convertToRaw, ContentState } from 'draft-js';
+import draftToHtml from 'draftjs-to-html';
+import htmlToDraft from 'html-to-draftjs';
+import 'react-draft-wysiwyg/dist/react-draft-wysiwyg.css';
 
-const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
+const Editor = dynamic(() => import('react-draft-wysiwyg').then(mod => mod.Editor), { ssr: false });
 export type TipoBloque = 'lectura' | 'video' | 'evaluacion' | 'documento';
 export interface BloqueContenido {
   id: string;
@@ -45,28 +48,55 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
   const [preguntasGeneradas, setPreguntasGeneradas] = useState<any[]>([]);
   const [generandoPreguntasIA, setGenerandoPreguntasIA] = useState(false);
   const [preguntaEditando, setPreguntaEditando] = useState<any>(null);
+  const [editorState, setEditorState] = useState(EditorState.createEmpty());
 
-  // Configuración del editor Quill
-  const quillModules = useMemo(() => ({
-    toolbar: [
-      [{ 'header': [1, 2, 3, false] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ 'color': [] }, { 'background': [] }],
-      [{ 'align': [] }],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      ['link', 'image'],
-      ['clean']
-    ]
-  }), []);
+  // Configuración del editor Draft.js
+  const editorToolbar = {
+    options: ['inline', 'blockType', 'fontSize', 'list', 'textAlign', 'colorPicker', 'link', 'image', 'history'],
+    inline: {
+      options: ['bold', 'italic', 'underline', 'strikethrough']
+    },
+    blockType: {
+      inDropdown: true,
+      options: ['Normal', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6']
+    },
+    list: {
+      options: ['unordered', 'ordered']
+    },
+    textAlign: {
+      options: ['left', 'center', 'right', 'justify']
+    },
+    image: {
+      uploadEnabled: true,
+      uploadCallback: (file: File) => {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            resolve({ data: { link: e.target?.result } });
+          };
+          reader.readAsDataURL(file);
+        });
+      },
+      previewImage: true,
+      alt: { present: true, mandatory: false }
+    }
+  };
 
-  const quillFormats = [
-    'header',
-    'bold', 'italic', 'underline', 'strike',
-    'color', 'background',
-    'align',
-    'list', 'bullet',
-    'link', 'image'
-  ];
+  const handleEditorChange = (state: EditorState) => {
+    setEditorState(state);
+    const html = draftToHtml(convertToRaw(state.getCurrentContent()));
+    if (bloqueSeleccionado) {
+      actualizarBloque({ ...bloqueSeleccionado, contenido: html });
+    }
+  };
+
+  const loadContentToEditor = (html: string) => {
+    const contentBlock = htmlToDraft(html || '');
+    if (contentBlock) {
+      const contentState = ContentState.createFromBlockArray(contentBlock.contentBlocks);
+      setEditorState(EditorState.createWithContent(contentState));
+    }
+  };
 
   // Debug: log cuando cambien los bloques
   console.log('🔧 ConstructorCurso - bloques recibidos:', bloques?.length || 0, bloques);
@@ -461,16 +491,20 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                         <div className="vista-previa-contenido" dangerouslySetInnerHTML={{ __html: bloqueSeleccionado.contenido || '<p style="color:#999">Sin contenido</p>' }} />
                       </div>
                     ) : (
-                      <div className="border-2 border-gray-200 rounded-xl overflow-hidden">
-                        <ReactQuill
-                          theme="snow"
-                          value={bloqueSeleccionado.contenido || ''}
-                          onChange={(content) => actualizarBloque({ ...bloqueSeleccionado, contenido: content })}
-                          modules={quillModules}
-                          formats={quillFormats}
+                      <div className="border-2 border-gray-200 rounded-xl overflow-hidden bg-white" style={{ minHeight: '350px' }}>
+                        <Editor
+                          editorState={editorState}
+                          onEditorStateChange={handleEditorChange}
+                          toolbar={editorToolbar}
                           placeholder="Escribe el contenido de la lectura aquí..."
-                          className="bg-white"
-                          style={{ minHeight: '300px' }}
+                          editorClassName="px-4 py-2"
+                          toolbarClassName="border-b border-gray-200"
+                          wrapperClassName="min-h-[300px]"
+                          onFocus={() => {
+                            if (!bloqueSeleccionado.contenido) {
+                              loadContentToEditor(bloqueSeleccionado.contenido || '');
+                            }
+                          }}
                         />
                       </div>
                     )}
