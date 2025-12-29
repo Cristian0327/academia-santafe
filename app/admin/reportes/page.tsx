@@ -1,16 +1,13 @@
 'use client';
-
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { FileSpreadsheet, Download, Users, BookOpen, Mail, Send, Calendar } from 'lucide-react';
 import apiClient from '@/lib/api-client';
-
 function ReportesContent() {
   const searchParams = useSearchParams();
   const cursoParam = searchParams.get('curso');
-  
   const [inscripciones, setInscripciones] = useState<any[]>([]);
   const [cursos, setCursos] = useState<any[]>([]);
   const [cursoSeleccionado, setCursoSeleccionado] = useState(cursoParam || 'todos');
@@ -18,21 +15,16 @@ function ReportesContent() {
   const [enviandoReporte, setEnviandoReporte] = useState(false);
   const [fechaFiltro, setFechaFiltro] = useState(new Date().toISOString().split('T')[0]);
   const [cursosData, setCursosData] = useState<any[]>([]);
-
   useEffect(() => {
     cargarDatos();
     cargarCursos();
   }, []);
-
   useEffect(() => {
-    // Si viene curso por URL, seleccionarlo
     if (cursoParam && cursosData.length > 0) {
       setCursoSeleccionado(cursoParam);
     }
   }, [cursoParam, cursosData]);
-
   useEffect(() => {
-    // Cuando cambia el curso seleccionado, cargar su email
     if (cursoSeleccionado !== 'todos') {
       const cursoActual = cursosData.find(c => c.id === cursoSeleccionado);
       if (cursoActual?.emailReporte) {
@@ -40,7 +32,6 @@ function ReportesContent() {
       }
     }
   }, [cursoSeleccionado, cursosData]);
-
   const cargarCursos = async () => {
     try {
       const data = await apiClient.listarCursos();
@@ -49,24 +40,16 @@ function ReportesContent() {
       console.error('Error al cargar cursos:', error);
     }
   };
-
   const cargarDatos = async () => {
     try {
-      // Intentar cargar desde backend primero
       const inscripcionesBackend = await apiClient.listarTodasInscripciones();
       setInscripciones(inscripcionesBackend);
-      
-      // Obtener cursos únicos
       const cursosUnicos = [...new Set(inscripcionesBackend.map((i: any) => i.cursoId))];
       setCursos(cursosUnicos);
-      
       console.log(`✅ ${inscripcionesBackend.length} inscripciones cargadas desde servidor`);
     } catch (error) {
       console.warn('⚠️ No se pudo cargar desde servidor, usando localStorage:', error);
-      
-      // Fallback: cargar desde localStorage
       const inscripcionesData: any[] = [];
-      
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key?.startsWith('inscripcion_')) {
@@ -78,25 +61,19 @@ function ReportesContent() {
           }
         }
       }
-
       setInscripciones(inscripcionesData);
-
-      // Obtener cursos únicos
       const cursosUnicos = [...new Set(inscripcionesData.map(i => i.cursoId))];
       setCursos(cursosUnicos);
     }
   };
-
   const exportarCSV = () => {
     const inscripcionesFiltradas = cursoSeleccionado === 'todos' 
       ? inscripciones 
       : inscripciones.filter(i => i.cursoId === cursoSeleccionado);
-
     if (inscripcionesFiltradas.length === 0) {
       alert('No hay datos para exportar');
       return;
     }
-
     const headers = [
       'Nombre',
       'Documento',
@@ -108,7 +85,6 @@ function ReportesContent() {
       'Fecha Inscripción',
       'Estado'
     ];
-
     const rows = inscripcionesFiltradas.map(i => [
       i.nombre || '',
       i.documento || '',
@@ -120,57 +96,44 @@ function ReportesContent() {
       i.fechaInscripcion ? new Date(i.fechaInscripcion).toLocaleDateString('es-ES') : '',
       i.activo ? 'Activo' : 'Inactivo'
     ]);
-
     let csvContent = '\uFEFF';
     csvContent += headers.join(',') + '\n';
     rows.forEach(row => {
       csvContent += row.map(cell => `"${cell}"`).join(',') + '\n';
     });
-
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
-    
     link.setAttribute('href', url);
     link.setAttribute('download', `reporte_estudiantes_${new Date().toISOString().split('T')[0]}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-
     alert('✅ Reporte exportado exitosamente');
   };
-
   const enviarReportePorCorreo = async () => {
     if (!emailDestino || !emailDestino.includes('@')) {
       alert('❌ Por favor ingresa un correo electrónico válido');
       return;
     }
-
     if (cursoSeleccionado === 'todos') {
       alert('❌ Por favor selecciona un curso específico para el reporte');
       return;
     }
-
     const inscripcionesCurso = inscripciones.filter(i => i.cursoId === cursoSeleccionado);
-    
-    // Filtrar por fecha si está seleccionada
     const inscripcionesFecha = fechaFiltro 
       ? inscripcionesCurso.filter(i => {
           const fechaInsc = i.fechaInscripcion ? new Date(i.fechaInscripcion).toISOString().split('T')[0] : null;
           return fechaInsc === fechaFiltro;
         })
       : inscripcionesCurso;
-
     if (inscripcionesFecha.length === 0) {
       alert('❌ No hay inscripciones para este curso en la fecha seleccionada');
       return;
     }
-
     setEnviandoReporte(true);
-
     try {
-      // Preparar datos de participantes
       const participantes = inscripcionesFecha.map(insc => ({
         nombre: insc.nombre,
         documento: insc.documento,
@@ -181,11 +144,8 @@ function ReportesContent() {
         reprobado: insc.progreso > 0 && insc.progreso < 100 && !insc.completado,
         fechaInscripcion: insc.fechaInscripcion
       }));
-
-      // Obtener título del curso
       const cursoActual = cursosData.find(c => c.id === cursoSeleccionado);
       const tituloCurso = cursoActual?.titulo || `Curso ${cursoSeleccionado}`;
-
       const response = await fetch('/api/reportes-diarios', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -197,9 +157,7 @@ function ReportesContent() {
           participantes: participantes
         })
       });
-
       const resultado = await response.json();
-
       if (resultado.success) {
         alert(`✅ Reporte enviado exitosamente a ${emailDestino}\n\nParticipantes incluidos: ${resultado.participantes}`);
         setEmailDestino('');
@@ -213,15 +171,12 @@ function ReportesContent() {
       setEnviandoReporte(false);
     }
   };
-
   const inscripcionesFiltradas = cursoSeleccionado === 'todos' 
     ? inscripciones 
     : inscripciones.filter(i => i.cursoId === cursoSeleccionado);
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      
       <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
           <div className="flex items-center justify-between mb-6">
@@ -237,8 +192,7 @@ function ReportesContent() {
             </div>
             <FileSpreadsheet className="h-16 w-16 text-primary-600" />
           </div>
-
-          {/* Estadísticas */}
+          {}
           <div className="grid md:grid-cols-3 gap-6 mb-8">
             <div className="bg-primary-50 rounded-xl p-6">
               <div className="flex items-center justify-between">
@@ -249,7 +203,6 @@ function ReportesContent() {
                 <Users className="h-12 w-12 text-primary-600" />
               </div>
             </div>
-
             <div className="bg-green-50 rounded-xl p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -261,7 +214,6 @@ function ReportesContent() {
                 <BookOpen className="h-12 w-12 text-green-600" />
               </div>
             </div>
-
             <div className="bg-orange-50 rounded-xl p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -274,8 +226,7 @@ function ReportesContent() {
               </div>
             </div>
           </div>
-
-          {/* Panel de Envío de Reportes por Correo */}
+          {}
           <div className="bg-gradient-to-r from-primary-50 to-blue-50 rounded-xl p-6 mb-6 border-2 border-primary-200">
             <div className="flex items-center gap-3 mb-4">
               <Mail className="h-6 w-6 text-primary-600" />
@@ -284,7 +235,6 @@ function ReportesContent() {
             <p className="text-sm text-gray-600 mb-4">
               Configura el envío automático del reporte diario por correo electrónico
             </p>
-
             <div className="grid md:grid-cols-3 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -303,7 +253,6 @@ function ReportesContent() {
                   ))}
                 </select>
               </div>
-
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   <Calendar className="inline h-4 w-4 mr-1" />
@@ -316,7 +265,6 @@ function ReportesContent() {
                   className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Correo Destino *
@@ -335,7 +283,6 @@ function ReportesContent() {
                 </p>
               </div>
             </div>
-
             <button
               onClick={enviarReportePorCorreo}
               disabled={enviandoReporte || cursoSeleccionado === 'todos' || !emailDestino}
@@ -354,8 +301,7 @@ function ReportesContent() {
               )}
             </button>
           </div>
-
-          {/* Exportar CSV */}
+          {}
           <div className="flex items-center justify-between mb-6 pb-6 border-b border-gray-200">
             <div className="flex items-center gap-4">
               <label className="text-sm font-semibold text-gray-700">Ver datos del curso:</label>
@@ -372,7 +318,6 @@ function ReportesContent() {
                 ))}
               </select>
             </div>
-
             <button
               onClick={exportarCSV}
               className="flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-green-700 transition-all shadow-lg"
@@ -381,8 +326,7 @@ function ReportesContent() {
               Exportar a CSV
             </button>
           </div>
-
-          {/* Tabla de Datos */}
+          {}
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-100">
@@ -432,7 +376,6 @@ function ReportesContent() {
                 ))}
               </tbody>
             </table>
-
             {inscripcionesFiltradas.length === 0 && (
               <div className="text-center py-12">
                 <p className="text-gray-500">No hay inscripciones registradas</p>
@@ -441,12 +384,10 @@ function ReportesContent() {
           </div>
         </div>
       </div>
-
       <Footer />
     </div>
   );
 }
-
 export default function ReportesPage() {
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Cargando...</div>}>

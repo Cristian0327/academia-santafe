@@ -2,13 +2,11 @@ import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
-
 const poppins = Poppins({
   weight: ['300', '400', '500', '600', '700', '800'],
   subsets: ["latin"],
   variable: '--font-poppins',
 });
-
 export const metadata: Metadata = {
   title: "Academia Ladrillera Santafé - Capacitación Profesional",
   description: "Plataforma de cursos y capacitaciones para el personal de Ladrillera Santafé. Aprende, crece y certifícate.",
@@ -19,7 +17,6 @@ export const metadata: Metadata = {
     apple: '/favicon.svg',
   },
 };
-
 export default function RootLayout({
   children,
 }: Readonly<{

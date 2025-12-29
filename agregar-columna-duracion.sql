@@ -1,0 +1,1 @@
+ALTER TABLE cursos ADD COLUMN IF NOT EXISTS duracion TEXT;

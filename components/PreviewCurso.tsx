@@ -1,9 +1,7 @@
 'use client';
-
 import { X, User, Clock, BookOpen, Award } from 'lucide-react';
 import { BloqueContenido } from './ConstructorCurso';
 import VisorBloques from './VisorBloques';
-
 interface PreviewCursoProps {
   curso: {
     titulo: string;
@@ -18,12 +16,11 @@ interface PreviewCursoProps {
   };
   onCerrar: () => void;
 }
-
 export default function PreviewCurso({ curso, onCerrar }: PreviewCursoProps) {
   return (
     <div className="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 overflow-y-auto">
       <div className="min-h-screen py-8 px-4">
-        {/* Header del preview */}
+        {}
         <div className="bg-blue-600 text-white py-3 px-6 rounded-t-xl max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Award className="h-5 w-5" />
@@ -36,10 +33,9 @@ export default function PreviewCurso({ curso, onCerrar }: PreviewCursoProps) {
             <X className="h-6 w-6" />
           </button>
         </div>
-
-        {/* Contenido del curso */}
+        {}
         <div className="max-w-7xl mx-auto bg-white rounded-b-xl shadow-2xl">
-          {/* Hero del curso */}
+          {}
           <div className="relative">
             {curso.imagen ? (
               <div className="h-64 bg-gradient-to-r from-blue-600 to-purple-600 relative overflow-hidden">
@@ -71,8 +67,7 @@ export default function PreviewCurso({ curso, onCerrar }: PreviewCursoProps) {
               </div>
             )}
           </div>
-
-          {/* Información del curso */}
+          {}
           <div className="p-8">
             <div className="max-w-5xl mx-auto">
               <div className="grid md:grid-cols-3 gap-6 mb-8">
@@ -85,7 +80,6 @@ export default function PreviewCurso({ curso, onCerrar }: PreviewCursoProps) {
                     <p className="font-semibold text-gray-900">{curso.instructor}</p>
                   </div>
                 </div>
-
                 <div className="flex items-center gap-3">
                   <div className="p-3 bg-purple-100 rounded-lg">
                     <Clock className="h-5 w-5 text-purple-600" />
@@ -95,7 +89,6 @@ export default function PreviewCurso({ curso, onCerrar }: PreviewCursoProps) {
                     <p className="font-semibold text-gray-900">{curso.duracion}</p>
                   </div>
                 </div>
-
                 <div className="flex items-center gap-3">
                   <div className="p-3 bg-green-100 rounded-lg">
                     <BookOpen className="h-5 w-5 text-green-600" />
@@ -106,12 +99,10 @@ export default function PreviewCurso({ curso, onCerrar }: PreviewCursoProps) {
                   </div>
                 </div>
               </div>
-
               <div className="mb-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">Acerca de este curso</h2>
                 <p className="text-gray-700 leading-relaxed">{curso.descripcion}</p>
               </div>
-
               {curso.contenido && (
                 <div className="mb-8">
                   <h2 className="text-2xl font-bold text-gray-900 mb-4">Lo que aprenderás</h2>
@@ -127,8 +118,7 @@ export default function PreviewCurso({ curso, onCerrar }: PreviewCursoProps) {
                   </div>
                 </div>
               )}
-
-              {/* Módulos del curso */}
+              {}
               <div>
                 <div className="mb-4">
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">Contenido del curso</h2>
@@ -136,7 +126,6 @@ export default function PreviewCurso({ curso, onCerrar }: PreviewCursoProps) {
                     {curso.bloques.length} {curso.bloques.length === 1 ? 'elemento' : 'elementos'}
                   </p>
                 </div>
-
                 <VisorBloques
                   bloques={curso.bloques as any}
                 />
@@ -144,8 +133,7 @@ export default function PreviewCurso({ curso, onCerrar }: PreviewCursoProps) {
             </div>
           </div>
         </div>
-
-        {/* Footer del preview */}
+        {}
         <div className="max-w-7xl mx-auto mt-4 text-center">
           <button
             onClick={onCerrar}

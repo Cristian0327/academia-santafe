@@ -1,182 +1,159 @@
-import config from './api-config';
-
-// Cliente HTTP para consumir la API de archivos JSON
-// Sin base de datos - usa sistema de archivos del servidor Express
+import { supabase, supabaseHelpers } from './supabase';
 class ApiClient {
-  private baseUrl: string;
-
-  constructor() {
-    this.baseUrl = config.apiUrl;
-  }
-
-  async request(endpoint: string, options: RequestInit = {}): Promise<any> {
-    const url = `${this.baseUrl}${endpoint}`;
-    
+  async listarCursos(): Promise<any[]> {
     try {
-      const response = await fetch(url, {
-        ...config.requestConfig,
-        ...options,
-        headers: {
-          ...config.requestConfig.headers,
-          ...(options.headers || {})
-        }
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`HTTP ${response.status} error:`, errorText);
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
+      const cursos = await supabaseHelpers.obtenerCursos();
+      return cursos;
     } catch (error) {
-      console.error(`Error en request a ${endpoint}:`, error);
+      console.error('Error al listar cursos:', error);
+      return [];
+    }
+  }
+  async obtenerCurso(id: string): Promise<any> {
+    try {
+      const curso = await supabaseHelpers.obtenerCurso(parseInt(id));
+      return curso;
+    } catch (error) {
+      console.error('Error al obtener curso:', error);
+      return null;
+    }
+  }
+  async guardarCurso(curso: any): Promise<any> {
+    try {
+      const { data, error } = await supabase
+        .from('cursos')
+        .upsert({
+          ...(curso.id && { id: parseInt(curso.id) }),
+          titulo: curso.titulo,
+          descripcion: curso.descripcion,
+          instructor: curso.instructor,
+          categoria: curso.categoria,
+          duracion: curso.duracion,
+          duracion_estimada: parseInt(curso.duracionEstimada) || 60,
+          nivel: curso.nivel || 'Principiante',
+          video_url: curso.videoUrl || curso.video_url,
+          imagen_portada: curso.imagen || curso.imagen_portada,
+          contenido: curso.contenido,
+          bloques: curso.bloques,
+          evaluaciones: curso.evaluaciones,
+          prerequisitos: curso.prerequisitos,
+          certificado_template: curso.certificadoTemplate !== undefined ? curso.certificadoTemplate : (curso.certificado_template || null),
+          clave_inscripcion: curso.claveInscripcion !== undefined ? curso.claveInscripcion : (curso.clave_inscripcion || null),
+          precio: parseFloat(curso.precio) || 0,
+          activo: curso.activo !== undefined ? curso.activo : true
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return { success: true, mensaje: 'Curso guardado', curso: data };
+    } catch (error) {
+      console.error('Error al guardar curso:', error);
       throw error;
     }
   }
-
-  // Métodos de cursos
-  async listarCursos(): Promise<any[]> {
-    // En producción sin backend, usar localStorage
-    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-      try {
-        // Intentar cargar desde archivos estáticos primero
-        const response = await fetch('/data/cursos-list.json');
-        if (response.ok) {
-          const cursosEstaticos = await response.json();
-          
-          // Combinar con cursos de localStorage
-          const cursosLocalJSON = localStorage.getItem('cursos');
-          const cursosLocal = cursosLocalJSON ? JSON.parse(cursosLocalJSON) : [];
-          
-          // Merge (prioridad a localStorage)
-          const todosLosCursos = [...cursosEstaticos];
-          cursosLocal.forEach((cursoLocal: any) => {
-            const existe = todosLosCursos.findIndex(c => c.id === cursoLocal.id);
-            if (existe >= 0) {
-              todosLosCursos[existe] = cursoLocal; // Actualizar
-            } else {
-              todosLosCursos.push(cursoLocal); // Agregar nuevo
-            }
-          });
-          
-          return todosLosCursos;
-        }
-      } catch (error) {
-        console.warn('No se pudieron cargar cursos estáticos, usando solo localStorage');
-      }
-      
-      // Fallback: solo localStorage
-      const cursosJSON = localStorage.getItem('cursos');
-      return cursosJSON ? JSON.parse(cursosJSON) : [];
-    }
-    
-    // En desarrollo, usar backend
-    return this.request(config.endpoints.cursos);
-  }
-
-  async obtenerCurso(id: string): Promise<any> {
-    // En producción sin backend
-    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-      try {
-        // Intentar desde archivo estático
-        const response = await fetch(`/data/cursos/${id}.json`);
-        if (response.ok) {
-          return await response.json();
-        }
-      } catch (error) {
-        console.warn('No se pudo cargar curso estático, buscando en localStorage');
-      }
-      
-      // Fallback: buscar en localStorage
-      const cursosJSON = localStorage.getItem('cursos');
-      const cursos = cursosJSON ? JSON.parse(cursosJSON) : [];
-      return cursos.find((c: any) => c.id === id) || null;
-    }
-    
-    // En desarrollo, usar backend
-    return this.request(config.endpoints.curso(id));
-  }
-
-  async guardarCurso(curso: any): Promise<any> {
-    // En producción sin backend, usar localStorage
-    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-      const cursosJSON = localStorage.getItem('cursos');
-      const cursos = cursosJSON ? JSON.parse(cursosJSON) : [];
-      
-      if (curso.id) {
-        // Actualizar
-        const index = cursos.findIndex((c: any) => c.id === curso.id);
-        if (index !== -1) {
-          cursos[index] = { ...curso, actualizado: new Date().toISOString() };
-        } else {
-          cursos.push({ ...curso, createdAt: new Date().toISOString() });
-        }
-      } else {
-        // Crear nuevo
-        curso.id = Date.now().toString();
-        curso.createdAt = new Date().toISOString();
-        curso.activo = true;
-        cursos.push(curso);
-      }
-      
-      localStorage.setItem('cursos', JSON.stringify(cursos));
-      return { success: true, mensaje: 'Curso guardado en navegador', curso };
-    }
-    
-    // En desarrollo, usar backend
-    return this.request(config.endpoints.cursos, {
-      method: 'POST',
-      body: JSON.stringify(curso)
-    });
-  }
-
   async eliminarCurso(id: string): Promise<void> {
-    // En producción sin backend, usar localStorage
-    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-      const cursosJSON = localStorage.getItem('cursos');
-      const cursos = cursosJSON ? JSON.parse(cursosJSON) : [];
-      const cursosFiltrados = cursos.filter((c: any) => c.id !== id);
-      localStorage.setItem('cursos', JSON.stringify(cursosFiltrados));
-      return;
+    try {
+      const cursoId = typeof id === 'string' ? parseInt(id) : id;
+      const { error } = await supabase
+        .from('cursos')
+        .delete()
+        .eq('id', cursoId);
+      if (error) {
+        console.error('Error de Supabase al eliminar:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error al eliminar curso:', error);
+      throw error;
     }
-    
-    // En desarrollo, usar backend
-    return this.request(config.endpoints.curso(id), {
-      method: 'DELETE'
-    });
   }
-
-  // Métodos de inscripciones
-  async guardarInscripcion(inscripcion: any): Promise<any> {
-    return this.request(config.endpoints.inscripciones, {
-      method: 'POST',
-      body: JSON.stringify(inscripcion)
-    });
+  async guardarProgreso(progreso: any): Promise<any> {
+    try {
+      return await supabaseHelpers.guardarProgreso(progreso);
+    } catch (error) {
+      console.error('Error al guardar progreso:', error);
+      throw error;
+    }
   }
-
-  async obtenerInscripcion(documento: string, cursoId: string): Promise<any> {
-    return this.request(config.endpoints.inscripcion(documento, cursoId));
+  async obtenerProgreso(documento: string, cursoId: string): Promise<any> {
+    try {
+      return await supabaseHelpers.obtenerProgreso(documento, parseInt(cursoId));
+    } catch (error) {
+      console.error('Error al obtener progreso:', error);
+      return null;
+    }
   }
-
-  async listarInscripcionesCurso(cursoId: string): Promise<any[]> {
-    return this.request(config.endpoints.inscripcionesCurso(cursoId));
+  async guardarEvaluacion(evaluacion: any): Promise<any> {
+    try {
+      return await supabaseHelpers.guardarEvaluacion(evaluacion);
+    } catch (error) {
+      console.error('Error al guardar evaluación:', error);
+      throw error;
+    }
   }
-
+  async obtenerEvaluacion(documento: string, cursoId: string): Promise<any> {
+    try {
+      return await supabaseHelpers.obtenerEvaluacion(documento, parseInt(cursoId));
+    } catch (error) {
+      console.error('Error al obtener evaluación:', error);
+      return null;
+    }
+  }
+  async obtenerEstudiante(documento: string): Promise<any> {
+    try {
+      return await supabaseHelpers.obtenerEstudiante(documento);
+    } catch (error) {
+      console.error('Error al obtener estudiante:', error);
+      return null;
+    }
+  }
+  async crearEstudiante(estudiante: any): Promise<any> {
+    try {
+      return await supabaseHelpers.crearEstudiante(estudiante);
+    } catch (error) {
+      console.error('Error al crear estudiante:', error);
+      throw error;
+    }
+  }
   async listarTodasInscripciones(): Promise<any[]> {
-    return this.request(config.endpoints.inscripciones);
+    try {
+      const { data, error } = await supabase
+        .from('progreso')
+        .select(`
+          *,
+          cursos (
+            id,
+            titulo,
+            categoria,
+            instructor
+          )
+        `);
+      if (error) throw error;
+      const inscripciones = (data || []).map((p: any) => ({
+        documento: p.documento,
+        cursoId: p.curso_id.toString(),
+        cursoTitulo: p.cursos?.titulo || 'Sin título',
+        categoria: p.cursos?.categoria || '',
+        progreso: p.porcentaje,
+        completado: p.completado,
+        fechaInscripcion: p.fecha_inscripcion,
+        fechaCompletado: p.fecha_completado,
+        ultimaLeccion: p.ultima_leccion
+      }));
+      return inscripciones;
+    } catch (error) {
+      console.error('Error al listar inscripciones:', error);
+      return [];
+    }
   }
-
-  async eliminarInscripcion(documento: string, cursoId: string): Promise<void> {
-    return this.request(config.endpoints.inscripcion(documento, cursoId), {
-      method: 'DELETE'
-    });
-  }
-
-  // Health check
-  async health(): Promise<any> {
-    return this.request(config.endpoints.health);
+  async obtenerInscripcionesPorCurso(cursoId: string): Promise<any[]> {
+    try {
+      const todasInscripciones = await this.listarTodasInscripciones();
+      return todasInscripciones.filter((i: any) => i.cursoId === cursoId);
+    } catch (error) {
+      console.error('Error al obtener inscripciones por curso:', error);
+      return [];
+    }
   }
 }
-
 export default new ApiClient();

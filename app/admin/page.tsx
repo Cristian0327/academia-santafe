@@ -1,9 +1,7 @@
 'use client';
-
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Shield } from 'lucide-react';
-
 export default function AdminPage() {
   return (
     <div className="min-h-screen bg-gray-50">

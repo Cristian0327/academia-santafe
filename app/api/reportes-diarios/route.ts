@@ -1,21 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
-
 export async function POST(req: NextRequest) {
   try {
     const { cursoId, cursoTitulo, fechaInicio, fechaFin, emailDestino } = await req.json();
-
-    // Obtener todas las inscripciones del día desde localStorage
-    // Como esto es server-side, necesitamos recibir los datos del cliente
     const { participantes } = await req.json();
-
     if (!participantes || participantes.length === 0) {
       return NextResponse.json({ 
         mensaje: 'No hay actividad registrada para este curso en el período seleccionado' 
       }, { status: 200 });
     }
-
-    // Configurar transporter de nodemailer
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
       port: parseInt(process.env.SMTP_PORT || '587'),
@@ -25,8 +18,6 @@ export async function POST(req: NextRequest) {
         pass: process.env.SMTP_PASS
       }
     });
-
-    // Generar HTML del reporte
     const htmlReporte = `
       <!DOCTYPE html>
       <html>
@@ -57,13 +48,11 @@ export async function POST(req: NextRequest) {
             <h1>📊 Reporte Diario de Curso</h1>
             <p>Academia Santafé - Sistema de Gestión de Aprendizaje</p>
           </div>
-
           <div style="background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
             <h2 style="color: #1226aa; margin-top: 0;">Curso: ${cursoTitulo || 'Sin título'}</h2>
             <p><strong>Período:</strong> ${fechaInicio || 'Hoy'} ${fechaFin ? `hasta ${fechaFin}` : ''}</p>
             <p><strong>Total de Participantes:</strong> ${participantes.length}</p>
           </div>
-
           <div class="stats">
             <div class="stat-card">
               <div class="stat-number" style="color: #059669;">${participantes.filter((p: any) => p.aprobado).length}</div>
@@ -78,7 +67,6 @@ export async function POST(req: NextRequest) {
               <div class="stat-label">En Progreso</div>
             </div>
           </div>
-
           <table>
             <thead>
               <tr>
@@ -105,7 +93,6 @@ export async function POST(req: NextRequest) {
               `).join('')}
             </tbody>
           </table>
-
           <div class="footer">
             <p><strong>Academia Santafé</strong></p>
             <p>Este es un reporte automático generado el ${new Date().toLocaleDateString('es-ES', { 
@@ -121,24 +108,19 @@ export async function POST(req: NextRequest) {
       </body>
       </html>
     `;
-
-    // Enviar correo
     const info = await transporter.sendMail({
       from: `"Academia Santafé" <${process.env.SMTP_USER}>`,
       to: emailDestino,
       subject: `📊 Reporte Diario - ${cursoTitulo} - ${new Date().toLocaleDateString('es-ES')}`,
       html: htmlReporte
     });
-
     console.log('✅ Reporte enviado:', info.messageId);
-
     return NextResponse.json({ 
       success: true, 
       mensaje: 'Reporte enviado exitosamente',
       messageId: info.messageId,
       participantes: participantes.length
     });
-
   } catch (error: any) {
     console.error('❌ Error al enviar reporte:', error);
     return NextResponse.json({ 

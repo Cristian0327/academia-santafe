@@ -1,5 +1,4 @@
 'use client';
-
 export function AnimatedLogo() {
   return (
     <svg 

@@ -1,10 +1,8 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import { Video, FileText, ClipboardCheck, CheckCircle, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
 import TranscripcionVideo from './TranscripcionVideo';
 import ReactMarkdown from 'react-markdown';
-
 interface Leccion {
   id: string;
   curso_id: string;
@@ -19,28 +17,23 @@ interface Leccion {
   puntaje_minimo?: number;
   obligatoria: boolean;
 }
-
 interface LeccionesViewerProps {
   cursoId: string;
   usuarioId?: string;
   onLeccionCompletada?: (leccionId: string) => void;
 }
-
 export default function LeccionesViewer({ cursoId, usuarioId, onLeccionCompletada }: LeccionesViewerProps) {
   const [lecciones, setLecciones] = useState<Leccion[]>([]);
   const [leccionActual, setLeccionActual] = useState(0);
   const [leccionesCompletadas, setLeccionesCompletadas] = useState<string[]>([]);
   const [cargando, setCargando] = useState(true);
   const [videoId, setVideoId] = useState('');
-
-  // Cargar lecciones desde localStorage o API
   useEffect(() => {
     cargarLecciones();
     if (usuarioId) {
       cargarProgreso();
     }
   }, [cursoId, usuarioId]);
-
   useEffect(() => {
     if (lecciones[leccionActual]?.tipo === 'video' && lecciones[leccionActual]?.video_url) {
       const url = lecciones[leccionActual].video_url || '';
@@ -48,11 +41,9 @@ export default function LeccionesViewer({ cursoId, usuarioId, onLeccionCompletad
       setVideoId(extractedId);
     }
   }, [leccionActual, lecciones]);
-
   const cargarLecciones = async () => {
     setCargando(true);
     try {
-      // Cargar desde API (archivos JSON)
       const response = await fetch(`/api/cursos/${cursoId}/lecciones`);
       if (response.ok) {
         const data = await response.json();
@@ -67,12 +58,9 @@ export default function LeccionesViewer({ cursoId, usuarioId, onLeccionCompletad
       setCargando(false);
     }
   };
-
   const cargarProgreso = async () => {
     if (!usuarioId) return;
-    
     try {
-      // Cargar desde localStorage
       const stored = localStorage.getItem(`progreso_${usuarioId}_${cursoId}`);
       if (stored) {
         const data = JSON.parse(stored);
@@ -82,50 +70,38 @@ export default function LeccionesViewer({ cursoId, usuarioId, onLeccionCompletad
       console.error('Error al cargar progreso:', error);
     }
   };
-
   const marcarCompletada = async (leccionId: string) => {
     if (!usuarioId) {
       alert('Debes iniciar sesión para guardar tu progreso');
       return;
     }
-
     if (leccionesCompletadas.includes(leccionId)) {
       return; // Ya está completada
     }
-
     try {
-      // Guardar en localStorage
       const nuevasCompletadas = [...leccionesCompletadas, leccionId];
       setLeccionesCompletadas(nuevasCompletadas);
-      
       localStorage.setItem(`progreso_${usuarioId}_${cursoId}`, JSON.stringify({
         leccionesCompletadas: nuevasCompletadas,
         fecha_actualizacion: new Date().toISOString()
       }));
-
-      // Callback opcional
       onLeccionCompletada?.(leccionId);
-
-      // Mostrar mensaje de éxito
       alert('✅ ¡Lección completada!');
     } catch (error) {
       console.error('Error al marcar lección:', error);
       alert('❌ Error al guardar progreso');
     }
   };
-
   const siguienteLeccion = () => {
     if (leccionActual < lecciones.length - 1) {
       setLeccionActual(leccionActual + 1);
     }
   };
-
   const anteriorLeccion = () => {
     if (leccionActual > 0) {
       setLeccionActual(leccionActual - 1);
     }
   };
-
   const handleVideoSeek = (time: number) => {
     const iframe = document.querySelector('iframe');
     if (iframe && iframe.contentWindow) {
@@ -139,7 +115,6 @@ export default function LeccionesViewer({ cursoId, usuarioId, onLeccionCompletad
       );
     }
   };
-
   if (cargando) {
     return (
       <div className="animate-pulse space-y-4">
@@ -148,7 +123,6 @@ export default function LeccionesViewer({ cursoId, usuarioId, onLeccionCompletad
       </div>
     );
   }
-
   if (lecciones.length === 0) {
     return (
       <div className="bg-gray-50 rounded-xl p-8 text-center border-2 border-dashed border-gray-300">
@@ -158,13 +132,11 @@ export default function LeccionesViewer({ cursoId, usuarioId, onLeccionCompletad
       </div>
     );
   }
-
   const leccion = lecciones[leccionActual];
   const estaCompletada = leccionesCompletadas.includes(leccion.id);
-
   return (
     <div className="space-y-6">
-      {/* Barra de progreso de lecciones */}
+      {}
       <div className="bg-white rounded-xl shadow-lg p-4 border border-gray-100">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-gray-700">
@@ -181,8 +153,7 @@ export default function LeccionesViewer({ cursoId, usuarioId, onLeccionCompletad
           />
         </div>
       </div>
-
-      {/* Lista de lecciones (sidebar colapsable) */}
+      {}
       <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
         <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-4">
           <h2 className="text-lg font-bold">Contenido del Curso</h2>
@@ -192,21 +163,17 @@ export default function LeccionesViewer({ cursoId, usuarioId, onLeccionCompletad
             const completada = leccionesCompletadas.includes(l.id);
             const activa = index === leccionActual;
             const bloqueada = l.obligatoria && index > 0 && !leccionesCompletadas.includes(lecciones[index - 1].id);
-
             const iconos = {
               video: Video,
               texto: FileText,
               evaluacion: ClipboardCheck
             };
-
             const colores = {
               video: 'text-red-500',
               texto: 'text-blue-500',
               evaluacion: 'text-green-500'
             };
-
             const Icono = iconos[l.tipo];
-
             return (
               <button
                 key={l.id}
@@ -247,8 +214,7 @@ export default function LeccionesViewer({ cursoId, usuarioId, onLeccionCompletad
           })}
         </div>
       </div>
-
-      {/* Contenido de la lección actual */}
+      {}
       <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
         <div className="mb-4">
           <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
@@ -264,8 +230,7 @@ export default function LeccionesViewer({ cursoId, usuarioId, onLeccionCompletad
             <p className="text-gray-600 mt-2">{leccion.descripcion}</p>
           )}
         </div>
-
-        {/* Renderizar según tipo */}
+        {}
         {leccion.tipo === 'video' && leccion.video_url && (
           <div className="space-y-4">
             <div className="aspect-video bg-black rounded-xl overflow-hidden">
@@ -276,14 +241,12 @@ export default function LeccionesViewer({ cursoId, usuarioId, onLeccionCompletad
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               />
             </div>
-            
             {videoId && (
               <TranscripcionVideo
                 videoId={videoId}
                 onSeek={handleVideoSeek}
               />
             )}
-
             {!estaCompletada && (
               <button
                 onClick={() => marcarCompletada(leccion.id)}
@@ -295,13 +258,11 @@ export default function LeccionesViewer({ cursoId, usuarioId, onLeccionCompletad
             )}
           </div>
         )}
-
         {leccion.tipo === 'texto' && leccion.contenido && (
           <div className="space-y-4">
             <div className="prose max-w-none bg-gray-50 rounded-xl p-6">
               <ReactMarkdown>{leccion.contenido}</ReactMarkdown>
             </div>
-
             {!estaCompletada && (
               <button
                 onClick={() => marcarCompletada(leccion.id)}
@@ -313,7 +274,6 @@ export default function LeccionesViewer({ cursoId, usuarioId, onLeccionCompletad
             )}
           </div>
         )}
-
         {leccion.tipo === 'evaluacion' && (
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
             <p className="text-blue-700 text-center">
@@ -324,8 +284,7 @@ export default function LeccionesViewer({ cursoId, usuarioId, onLeccionCompletad
             </p>
           </div>
         )}
-
-        {/* Navegación */}
+        {}
         <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-200">
           <button
             onClick={anteriorLeccion}
@@ -335,7 +294,6 @@ export default function LeccionesViewer({ cursoId, usuarioId, onLeccionCompletad
             <ChevronLeft className="h-5 w-5" />
             Anterior
           </button>
-
           <button
             onClick={siguienteLeccion}
             disabled={leccionActual === lecciones.length - 1}

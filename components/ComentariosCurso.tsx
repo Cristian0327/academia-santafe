@@ -1,13 +1,10 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { MessageSquare, Send, Edit2, Trash2, Reply } from 'lucide-react';
-
 interface ComentariosCursoProps {
   cursoId: string | string[];
 }
-
 export default function ComentariosCurso({ cursoId }: ComentariosCursoProps) {
   const { data: session } = useSession();
   const [comentarios, setComentarios] = useState<any[]>([]);
@@ -16,14 +13,11 @@ export default function ComentariosCurso({ cursoId }: ComentariosCursoProps) {
   const [responderA, setResponderA] = useState<number | null>(null);
   const [editandoId, setEditandoId] = useState<number | null>(null);
   const [textoEditado, setTextoEditado] = useState('');
-
   useEffect(() => {
     cargarComentarios();
   }, [cursoId]);
-
   const cargarComentarios = async () => {
     try {
-      // Cargar comentarios desde localStorage
       const stored = localStorage.getItem(`comentarios_${cursoId}`);
       const data = stored ? JSON.parse(stored) : [];
       setComentarios(data);
@@ -31,20 +25,16 @@ export default function ComentariosCurso({ cursoId }: ComentariosCursoProps) {
       console.error('Error al cargar comentarios:', error);
     }
   };
-
   const enviarComentario = async () => {
     if (!nuevoComentario.trim()) {
       alert('Escribe un comentario');
       return;
     }
-
     if (!session?.user?.email) {
       alert('Debes iniciar sesión para comentar');
       return;
     }
-
     setCargando(true);
-
     try {
       const nuevoComent = {
         id: Date.now().toString(),
@@ -55,12 +45,10 @@ export default function ComentariosCurso({ cursoId }: ComentariosCursoProps) {
         respuesta_a: responderA,
         created_at: new Date().toISOString()
       };
-
       const stored = localStorage.getItem(`comentarios_${cursoId}`);
       const comentariosActuales = stored ? JSON.parse(stored) : [];
       comentariosActuales.unshift(nuevoComent);
       localStorage.setItem(`comentarios_${cursoId}`, JSON.stringify(comentariosActuales));
-
       setNuevoComentario('');
       setResponderA(null);
       cargarComentarios();
@@ -71,10 +59,8 @@ export default function ComentariosCurso({ cursoId }: ComentariosCursoProps) {
       setCargando(false);
     }
   };
-
   const eliminarComentario = async (id: number) => {
     if (!confirm('¿Eliminar este comentario?')) return;
-
     try {
       const stored = localStorage.getItem(`comentarios_${cursoId}`);
       const comentariosActuales = stored ? JSON.parse(stored) : [];
@@ -88,23 +74,19 @@ export default function ComentariosCurso({ cursoId }: ComentariosCursoProps) {
       alert('Error al eliminar el comentario');
     }
   };
-
   const iniciarEdicion = (comentario: any) => {
     setEditandoId(comentario.id);
     setTextoEditado(comentario.comentario);
   };
-
   const cancelarEdicion = () => {
     setEditandoId(null);
     setTextoEditado('');
   };
-
   const guardarEdicion = async (id: number) => {
     if (!textoEditado.trim()) {
       alert('El comentario no puede estar vacío');
       return;
     }
-
     try {
       const stored = localStorage.getItem(`comentarios_${cursoId}`);
       const comentariosActuales = stored ? JSON.parse(stored) : [];
@@ -120,7 +102,6 @@ export default function ComentariosCurso({ cursoId }: ComentariosCursoProps) {
         return c;
       });
       localStorage.setItem(`comentarios_${cursoId}`, JSON.stringify(comentariosActualizados));
-      
       setEditandoId(null);
       setTextoEditado('');
       cargarComentarios();
@@ -129,13 +110,10 @@ export default function ComentariosCurso({ cursoId }: ComentariosCursoProps) {
       alert('Error al editar el comentario');
     }
   };
-
   const comentariosPrincipales = comentarios.filter(c => !c.respuesta_a);
-
   const obtenerRespuestas = (comentarioId: number) => {
     return comentarios.filter(c => c.respuesta_a === comentarioId);
   };
-
   return (
     <div className="bg-white rounded-2xl shadow-xl p-8">
       <div className="flex items-center gap-3 mb-6">
@@ -144,8 +122,7 @@ export default function ComentariosCurso({ cursoId }: ComentariosCursoProps) {
           Comentarios ({comentarios.length})
         </h3>
       </div>
-
-      {/* Formulario de nuevo comentario */}
+      {}
       {session ? (
         <div className="mb-8">
           {responderA && (
@@ -183,8 +160,7 @@ export default function ComentariosCurso({ cursoId }: ComentariosCursoProps) {
           <p className="text-gray-600">Inicia sesión para comentar</p>
         </div>
       )}
-
-      {/* Lista de comentarios */}
+      {}
       <div className="space-y-4">
         {comentariosPrincipales.length === 0 ? (
           <p className="text-gray-500 text-center py-8">
@@ -218,7 +194,6 @@ export default function ComentariosCurso({ cursoId }: ComentariosCursoProps) {
                       </span>
                     )}
                   </div>
-                  
                   {editandoId === comentario.id ? (
                     <div className="space-y-2">
                       <textarea
@@ -245,7 +220,6 @@ export default function ComentariosCurso({ cursoId }: ComentariosCursoProps) {
                   ) : (
                     <p className="text-gray-700 mb-2">{comentario.comentario}</p>
                   )}
-                  
                   <div className="flex items-center gap-3 text-sm">
                     <button
                       onClick={() => setResponderA(comentario.id)}
@@ -273,8 +247,7 @@ export default function ComentariosCurso({ cursoId }: ComentariosCursoProps) {
                       </>
                     )}
                   </div>
-
-                  {/* Respuestas */}
+                  {}
                   {obtenerRespuestas(comentario.id).length > 0 && (
                     <div className="mt-4 ml-6 space-y-3">
                       {obtenerRespuestas(comentario.id).map((respuesta) => (
@@ -303,7 +276,6 @@ export default function ComentariosCurso({ cursoId }: ComentariosCursoProps) {
                                 </span>
                               )}
                             </div>
-                            
                             {editandoId === respuesta.id ? (
                               <div className="space-y-2">
                                 <textarea
@@ -330,7 +302,6 @@ export default function ComentariosCurso({ cursoId }: ComentariosCursoProps) {
                             ) : (
                               <p className="text-gray-700 text-sm">{respuesta.comentario}</p>
                             )}
-                            
                             {session?.user?.email === respuesta.usuario_id && (
                               <div className="flex items-center gap-2 mt-2 text-xs">
                                 <button

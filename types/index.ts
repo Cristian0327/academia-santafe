@@ -1,5 +1,3 @@
-// Tipos de datos para la plataforma
-
 export interface User {
   id: string;
   email: string;
@@ -9,7 +7,6 @@ export interface User {
   createdAt: Date;
   updatedAt: Date;
 }
-
 export interface Course {
   id: string;
   title: string;
@@ -28,7 +25,6 @@ export interface Course {
   createdAt: Date;
   updatedAt: Date;
 }
-
 export interface Lesson {
   id: string;
   courseId: string;
@@ -40,7 +36,6 @@ export interface Lesson {
   resources?: Resource[];
   createdAt: Date;
 }
-
 export interface Resource {
   id: string;
   name: string;
@@ -48,7 +43,6 @@ export interface Resource {
   url: string;
   size?: number;
 }
-
 export interface Enrollment {
   id: string;
   userId: string;
@@ -59,7 +53,6 @@ export interface Enrollment {
   enrolledAt: Date;
   completedAt?: Date;
 }
-
 export interface LessonProgress {
   id: string;
   userId: string;
@@ -72,14 +65,12 @@ export interface LessonProgress {
   createdAt: Date;
   updatedAt: Date;
 }
-
 export interface Note {
   id: string;
   timestamp: number; // segundo del video
   content: string;
   createdAt: Date;
 }
-
 export interface Review {
   id: string;
   userId: string;
@@ -91,7 +82,6 @@ export interface Review {
   createdAt: Date;
   updatedAt: Date;
 }
-
 export interface Certificate {
   id: string;
   userId: string;
@@ -102,7 +92,6 @@ export interface Certificate {
   verificationCode: string;
   certificateUrl: string;
 }
-
 export interface Category {
   id: string;
   name: string;
@@ -110,7 +99,6 @@ export interface Category {
   icon?: string;
   coursesCount: number;
 }
-
 export interface UploadProgress {
   file: string;
   progress: number;

@@ -1,31 +1,23 @@
 'use client';
-
 import { useState } from 'react';
 import { Plus, X, Video, FileText, ClipboardCheck, GripVertical, ChevronUp, ChevronDown, Trash2, Edit } from 'lucide-react';
-
 export interface Leccion {
   id?: number;
   orden: number;
   tipo: 'video' | 'texto' | 'evaluacion';
   titulo: string;
   descripcion?: string;
-  // Para videos
   videoUrl?: string;
   duracion?: number;
-  // Para textos
   contenido?: string;
-  // Para evaluaciones
   preguntas?: any[];
   puntajeMinimo?: number;
-  // Metadata
   obligatoria: boolean;
 }
-
 interface GestorLeccionesProps {
   lecciones: Leccion[];
   onLeccionesChange: (lecciones: Leccion[]) => void;
 }
-
 export default function GestorLecciones({ lecciones, onLeccionesChange }: GestorLeccionesProps) {
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [editandoIndex, setEditandoIndex] = useState<number | null>(null);
@@ -41,41 +33,32 @@ export default function GestorLecciones({ lecciones, onLeccionesChange }: Gestor
     puntajeMinimo: 80,
     obligatoria: true
   });
-
   const tipos = [
     { value: 'video', label: 'Video', icon: Video, color: 'bg-red-500' },
     { value: 'texto', label: 'Lectura', icon: FileText, color: 'bg-blue-500' },
     { value: 'evaluacion', label: 'Evaluación', icon: ClipboardCheck, color: 'bg-green-500' }
   ];
-
   const agregarLeccion = () => {
     if (!leccionActual.titulo.trim()) {
       alert('El título es obligatorio');
       return;
     }
-
     if (leccionActual.tipo === 'video' && !leccionActual.videoUrl?.trim()) {
       alert('La URL del video es obligatoria');
       return;
     }
-
     if (leccionActual.tipo === 'texto' && !leccionActual.contenido?.trim()) {
       alert('El contenido es obligatorio para lecciones de texto');
       return;
     }
-
     if (editandoIndex !== null) {
-      // Actualizar lección existente
       const nuevasLecciones = [...lecciones];
       nuevasLecciones[editandoIndex] = { ...leccionActual };
       onLeccionesChange(nuevasLecciones);
       setEditandoIndex(null);
     } else {
-      // Agregar nueva lección
       onLeccionesChange([...lecciones, { ...leccionActual }]);
     }
-
-    // Resetear formulario
     setLeccionActual({
       orden: lecciones.length + 2,
       tipo: 'video',
@@ -90,24 +73,20 @@ export default function GestorLecciones({ lecciones, onLeccionesChange }: Gestor
     });
     setMostrarFormulario(false);
   };
-
   const eliminarLeccion = (index: number) => {
     if (confirm('¿Estás seguro de eliminar esta lección?')) {
       const nuevasLecciones = lecciones.filter((_, i) => i !== index);
-      // Reordenar
       nuevasLecciones.forEach((leccion, i) => {
         leccion.orden = i + 1;
       });
       onLeccionesChange(nuevasLecciones);
     }
   };
-
   const editarLeccion = (index: number) => {
     setLeccionActual({ ...lecciones[index] });
     setEditandoIndex(index);
     setMostrarFormulario(true);
   };
-
   const moverLeccion = (index: number, direccion: 'arriba' | 'abajo') => {
     if (
       (direccion === 'arriba' && index === 0) ||
@@ -115,26 +94,18 @@ export default function GestorLecciones({ lecciones, onLeccionesChange }: Gestor
     ) {
       return;
     }
-
     const nuevasLecciones = [...lecciones];
     const nuevoIndex = direccion === 'arriba' ? index - 1 : index + 1;
-
-    // Intercambiar
     [nuevasLecciones[index], nuevasLecciones[nuevoIndex]] = 
     [nuevasLecciones[nuevoIndex], nuevasLecciones[index]];
-
-    // Actualizar orden
     nuevasLecciones.forEach((leccion, i) => {
       leccion.orden = i + 1;
     });
-
     onLeccionesChange(nuevasLecciones);
   };
-
   const getTipoInfo = (tipo: string) => {
     return tipos.find(t => t.value === tipo) || tipos[0];
   };
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -165,14 +136,12 @@ export default function GestorLecciones({ lecciones, onLeccionesChange }: Gestor
           Agregar Lección
         </button>
       </div>
-
-      {/* Lista de Lecciones */}
+      {}
       {lecciones.length > 0 && (
         <div className="space-y-2 bg-gray-50 rounded-lg p-4">
           {lecciones.map((leccion, index) => {
             const tipoInfo = getTipoInfo(leccion.tipo);
             const IconoTipo = tipoInfo.icon;
-
             return (
               <div
                 key={index}
@@ -197,11 +166,9 @@ export default function GestorLecciones({ lecciones, onLeccionesChange }: Gestor
                     <ChevronDown className="h-4 w-4" />
                   </button>
                 </div>
-
                 <div className={`w-10 h-10 ${tipoInfo.color} rounded-lg flex items-center justify-center text-white flex-shrink-0`}>
                   <IconoTipo className="h-5 w-5" />
                 </div>
-
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs font-semibold text-gray-500">
@@ -230,7 +197,6 @@ export default function GestorLecciones({ lecciones, onLeccionesChange }: Gestor
                     </p>
                   )}
                 </div>
-
                 <div className="flex gap-2 flex-shrink-0">
                   <button
                     type="button"
@@ -254,7 +220,6 @@ export default function GestorLecciones({ lecciones, onLeccionesChange }: Gestor
           })}
         </div>
       )}
-
       {lecciones.length === 0 && (
         <div className="bg-gray-50 rounded-lg p-8 text-center border-2 border-dashed border-gray-300">
           <FileText className="h-12 w-12 text-gray-300 mx-auto mb-3" />
@@ -264,8 +229,7 @@ export default function GestorLecciones({ lecciones, onLeccionesChange }: Gestor
           </p>
         </div>
       )}
-
-      {/* Modal de Formulario */}
+      {}
       {mostrarFormulario && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -286,9 +250,8 @@ export default function GestorLecciones({ lecciones, onLeccionesChange }: Gestor
                 </button>
               </div>
             </div>
-
             <div className="p-6 space-y-6">
-              {/* Tipo de Lección */}
+              {}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-3">
                   Tipo de Lección *
@@ -320,8 +283,7 @@ export default function GestorLecciones({ lecciones, onLeccionesChange }: Gestor
                   })}
                 </div>
               </div>
-
-              {/* Título */}
+              {}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Título de la Lección *
@@ -334,8 +296,7 @@ export default function GestorLecciones({ lecciones, onLeccionesChange }: Gestor
                   placeholder="Ej: Introducción a la construcción de cimientos"
                 />
               </div>
-
-              {/* Descripción */}
+              {}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Descripción (Opcional)
@@ -348,8 +309,7 @@ export default function GestorLecciones({ lecciones, onLeccionesChange }: Gestor
                   placeholder="Breve descripción de lo que aprenderán..."
                 />
               </div>
-
-              {/* Campos específicos por tipo */}
+              {}
               {leccionActual.tipo === 'video' && (
                 <>
                   <div>
@@ -379,7 +339,6 @@ export default function GestorLecciones({ lecciones, onLeccionesChange }: Gestor
                   </div>
                 </>
               )}
-
               {leccionActual.tipo === 'texto' && (
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -397,7 +356,6 @@ export default function GestorLecciones({ lecciones, onLeccionesChange }: Gestor
                   </p>
                 </div>
               )}
-
               {leccionActual.tipo === 'evaluacion' && (
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
                   <p className="text-sm text-blue-700 mb-2">
@@ -418,8 +376,7 @@ export default function GestorLecciones({ lecciones, onLeccionesChange }: Gestor
                   </div>
                 </div>
               )}
-
-              {/* Lección Obligatoria */}
+              {}
               <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-4">
                 <input
                   type="checkbox"
@@ -433,7 +390,6 @@ export default function GestorLecciones({ lecciones, onLeccionesChange }: Gestor
                 </label>
               </div>
             </div>
-
             <div className="p-6 border-t border-gray-200 flex gap-3">
               <button
                 type="button"

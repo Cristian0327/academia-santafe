@@ -1,10 +1,7 @@
 'use client';
-
 import { useState } from 'react';
 import { Plus, Trash2, ChevronUp, ChevronDown, FileText, Video, CheckSquare, Book, AlertCircle } from 'lucide-react';
-
 export type TipoBloque = 'lectura' | 'video' | 'evaluacion' | 'documento';
-
 export interface BloqueContenido {
   id: string;
   tipo: TipoBloque;
@@ -17,7 +14,6 @@ export interface BloqueContenido {
   descripcion?: string; // Para evaluaciones
   puntajeMinimo?: number; // Porcentaje mínimo para aprobar (solo evaluaciones)
 }
-
 export interface PreguntaQuiz {
   id: string;
   pregunta: string;
@@ -28,17 +24,13 @@ export interface PreguntaQuiz {
   retroalimentacionPositiva?: string;
   retroalimentacionNegativa?: string;
 }
-
 interface Props {
   bloques: BloqueContenido[];
   onBloquesChange: (bloques: BloqueContenido[]) => void;
 }
-
 export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
   const [bloqueSeleccionado, setBloqueSeleccionado] = useState<BloqueContenido | null>(null);
   const [modoCreacionPreguntas, setModoCreacionPreguntas] = useState<'ia' | 'manual'>('manual');
-  
-  // Estados para generación de preguntas con IA
   const [preguntasIA, setPreguntasIA] = useState({
     opcion2: 0,  // V/F or 2 options
     opcion3: 0,  // A, B, C
@@ -48,8 +40,6 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
   const [preguntasGeneradas, setPreguntasGeneradas] = useState<any[]>([]);
   const [generandoPreguntasIA, setGenerandoPreguntasIA] = useState(false);
   const [preguntaEditando, setPreguntaEditando] = useState<any>(null);
-
-  // Crear nuevo bloque
   const agregarBloque = (tipo: TipoBloque) => {
     const nuevoBloque: BloqueContenido = {
       id: Date.now().toString(),
@@ -60,12 +50,9 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
       duracion: tipo === 'video' ? 10 : tipo === 'lectura' ? 15 : 20,
       preguntas: tipo === 'evaluacion' ? [] : undefined
     };
-    
     onBloquesChange([...bloques, nuevoBloque]);
     setBloqueSeleccionado(nuevoBloque);
   };
-
-  // Eliminar bloque
   const eliminarBloque = (id: string) => {
     const nuevosBloques = bloques.filter(b => b.id !== id);
     onBloquesChange(nuevosBloques);
@@ -73,29 +60,21 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
       setBloqueSeleccionado(null);
     }
   };
-
-  // Mover bloque arriba
   const moverArriba = (index: number) => {
     if (index === 0) return;
     const nuevosBloques = [...bloques];
     [nuevosBloques[index], nuevosBloques[index - 1]] = [nuevosBloques[index - 1], nuevosBloques[index]];
     onBloquesChange(nuevosBloques);
   };
-
-  // Mover bloque abajo
   const moverAbajo = (index: number) => {
     if (index === bloques.length - 1) return;
     const nuevosBloques = [...bloques];
     [nuevosBloques[index], nuevosBloques[index + 1]] = [nuevosBloques[index + 1], nuevosBloques[index]];
     onBloquesChange(nuevosBloques);
   };
-
-  // Editar bloque
   const editarBloque = (bloque: BloqueContenido) => {
     setBloqueSeleccionado(bloque);
   };
-
-  // Actualizar bloque
   const actualizarBloque = (bloqueActualizado: BloqueContenido) => {
     const nuevosBloques = bloques.map(b => 
       b.id === bloqueActualizado.id ? bloqueActualizado : b
@@ -103,11 +82,8 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
     onBloquesChange(nuevosBloques);
     setBloqueSeleccionado(bloqueActualizado);
   };
-
-  // Agregar pregunta a evaluacion
   const agregarPreguntaQuiz = () => {
     if (!bloqueSeleccionado || bloqueSeleccionado.tipo !== 'evaluacion') return;
-    
     const nuevaPregunta: PreguntaQuiz = {
       id: Date.now().toString(),
       pregunta: '',
@@ -118,66 +94,44 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
       retroalimentacionPositiva: '',
       retroalimentacionNegativa: ''
     };
-
     const bloqueActualizado = {
       ...bloqueSeleccionado,
       preguntas: [...(bloqueSeleccionado.preguntas || []), nuevaPregunta]
     };
-
     actualizarBloque(bloqueActualizado);
   };
-
-  // Actualizar pregunta
   const actualizarPregunta = (preguntaId: string, campo: string, valor: any) => {
     if (!bloqueSeleccionado || !bloqueSeleccionado.preguntas) return;
-
     const preguntasActualizadas = bloqueSeleccionado.preguntas.map(p =>
       p.id === preguntaId ? { ...p, [campo]: valor } : p
     );
-
     actualizarBloque({
       ...bloqueSeleccionado,
       preguntas: preguntasActualizadas
     });
   };
-
-  // Eliminar pregunta
   const eliminarPregunta = (preguntaId: string) => {
     if (!bloqueSeleccionado || !bloqueSeleccionado.preguntas) return;
-
     actualizarBloque({
       ...bloqueSeleccionado,
       preguntas: bloqueSeleccionado.preguntas.filter(p => p.id !== preguntaId)
     });
   };
-
-  // ========== FUNCIONES DE IA ==========
-  
-  // Generar preguntas con IA para el bloque actual
   const generarPreguntasConIA = async () => {
     if (!bloqueSeleccionado) return;
-
     const totalPreguntas = preguntasIA.opcion2 + preguntasIA.opcion3 + preguntasIA.opcion4 + preguntasIA.opcion5;
-    
     if (totalPreguntas === 0) {
       alert('❌ Debes especificar al menos una pregunta para generar');
       return;
     }
-
     const contenidoCurso = bloqueSeleccionado.contenido || bloqueSeleccionado.descripcion || '';
     if (!contenidoCurso.trim()) {
       alert('❌ Debes agregar contenido o descripción al bloque primero');
       return;
     }
-
     setGenerandoPreguntasIA(true);
-
     try {
-      const API_URL = typeof window !== 'undefined' && window.location.hostname.includes('netlify')
-        ? '/.netlify/functions/generar-preguntas'
-        : '/api/generar-preguntas';
-
-      const response = await fetch(API_URL, {
+      const response = await fetch('/api/generar-preguntas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -185,9 +139,7 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
           tiposPreguntas: preguntasIA
         })
       });
-
       if (!response.ok) throw new Error('Error en la API');
-
       const data = await response.json();
       setPreguntasGeneradas(data.preguntas || []);
       alert(`✨ ¡${data.preguntas.length} preguntas generadas con IA!\nRevísalas y edita las que necesites.`);
@@ -198,22 +150,16 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
       setGenerandoPreguntasIA(false);
     }
   };
-
-  // Agregar una pregunta generada al bloque
   const agregarPreguntaIA = (pregunta: any) => {
     if (!bloqueSeleccionado) return;
-
     actualizarBloque({
       ...bloqueSeleccionado,
       preguntas: [...(bloqueSeleccionado.preguntas || []), pregunta]
     });
     alert('✅ Pregunta agregada al bloque');
   };
-
-  // Agregar todas las preguntas generadas
   const agregarTodasPreguntasIA = () => {
     if (!bloqueSeleccionado) return;
-
     actualizarBloque({
       ...bloqueSeleccionado,
       preguntas: [...(bloqueSeleccionado.preguntas || []), ...preguntasGeneradas]
@@ -221,16 +167,11 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
     setPreguntasGeneradas([]);
     alert(`✅ ${preguntasGeneradas.length} preguntas agregadas al bloque`);
   };
-
-  // Editar una pregunta generada
   const editarPreguntaIA = (index: number) => {
     setPreguntaEditando({ ...preguntasGeneradas[index], index });
   };
-
-  // Guardar pregunta editada
   const guardarPreguntaEditada = () => {
     if (!preguntaEditando) return;
-
     const nuevasPreguntas = [...preguntasGeneradas];
     nuevasPreguntas[preguntaEditando.index] = {
       id: preguntaEditando.id,
@@ -245,15 +186,10 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
     setPreguntaEditando(null);
     alert('✅ Pregunta actualizada');
   };
-
-  // Eliminar una pregunta generada
   const eliminarPreguntaIA = (index: number) => {
     const nuevasPreguntas = preguntasGeneradas.filter((_, i) => i !== index);
     setPreguntasGeneradas(nuevasPreguntas);
   };
-
-
-  // Iconos por tipo
   const obtenerIcono = (tipo: TipoBloque) => {
     switch (tipo) {
       case 'lectura': return <FileText className="h-5 w-5" />;
@@ -262,8 +198,6 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
       case 'documento': return <Book className="h-5 w-5" />;
     }
   };
-
-  // Color por tipo
   const obtenerColor = (tipo: TipoBloque) => {
     switch (tipo) {
       case 'lectura': return 'bg-amber-100 text-amber-700 border-amber-300';
@@ -272,7 +206,6 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
       case 'documento': return 'bg-secondary-100 text-secondary-700 border-secondary-300';
     }
   };
-
   return (
     <div className="space-y-6">
       <div>
@@ -280,8 +213,7 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
         <p className="text-sm text-gray-600 mb-4">
           Construye tu curso agregando bloques en el orden que desees.
         </p>
-
-        {/* Botones para agregar bloques */}
+        {}
         <div className="flex items-center gap-3 mb-6">
           <span className="text-sm font-semibold text-gray-700">Añadir:</span>
           <button
@@ -314,12 +246,10 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
           </button>
         </div>
       </div>
-
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Lista de bloques */}
+        {}
         <div>
           <h4 className="font-semibold text-gray-900 mb-3">Estructura ({bloques.length} bloques)</h4>
-          
           {bloques.length === 0 ? (
             <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-8 text-center">
               <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-3" />
@@ -361,8 +291,7 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                         </p>
                       </div>
                     </div>
-                    
-                    {/* Controles */}
+                    {}
                     <div className="flex flex-col gap-1">
                       <button
                         type="button"
@@ -394,11 +323,9 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
             </div>
           )}
         </div>
-
-        {/* Editor de bloque */}
+        {}
         <div>
           <h4 className="font-semibold text-gray-900 mb-3">Editor</h4>
-          
           {!bloqueSeleccionado ? (
             <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-8 text-center">
               <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-3" />
@@ -413,8 +340,7 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                   Editando: {bloqueSeleccionado.tipo}
                 </span>
               </div>
-
-              {/* Campos comunes */}
+              {}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Título del Bloque *
@@ -427,7 +353,6 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                   placeholder={`Título de ${bloqueSeleccionado.tipo}`}
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Duración (minutos) *
@@ -440,8 +365,7 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                   min="1"
                 />
               </div>
-
-              {/* Campos específicos por tipo */}
+              {}
               {bloqueSeleccionado.tipo === 'lectura' && (
                 <div className="space-y-4">
                   <div>
@@ -459,41 +383,94 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                       💡 Tip: Puedes usar Markdown para formatear el texto. Para agregar imágenes usa: ![texto](url-de-imagen)
                     </p>
                   </div>
-                  
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Agregar Imagen o PDF
+                      Imágenes en esta Lectura
                     </label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-4">
-                      <input
-                        type="url"
-                        placeholder="URL de la imagen o PDF (ej: https://ejemplo.com/imagen.jpg)"
-                        className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none mb-2"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            const url = (e.target as HTMLInputElement).value;
-                            if (url) {
-                              const isPdf = url.toLowerCase().endsWith('.pdf');
-                              const markdown = isPdf 
-                                ? `\n\n[📄 Ver PDF](${url})\n\n`
-                                : `\n\n![Imagen](${url})\n\n`;
-                              actualizarBloque({ 
-                                ...bloqueSeleccionado, 
-                                contenido: (bloqueSeleccionado.contenido || '') + markdown
-                              });
-                              (e.target as HTMLInputElement).value = '';
-                            }
-                          }
-                        }}
-                      />
-                      <p className="text-xs text-gray-500">
-                        📎 Pega la URL de tu imagen o PDF y presiona Enter para agregarla al contenido
-                      </p>
-                    </div>
+                    
+                    {(() => {
+                      // Extraer todas las imágenes del contenido HTML
+                      const contenido = bloqueSeleccionado.contenido || '';
+                      const imgRegex = /<img[^>]+src="([^"]+)"[^>]*>/g;
+                      const imagenes: string[] = [];
+                      let match;
+                      while ((match = imgRegex.exec(contenido)) !== null) {
+                        imagenes.push(match[1]);
+                      }
+                      
+                      return (
+                        <>
+                          {imagenes.length > 0 && (
+                            <div className="grid grid-cols-3 gap-3 mb-4 p-4 border-2 border-orange-200 bg-orange-50 rounded-xl">
+                              {imagenes.map((imgSrc, idx) => (
+                                <div key={idx} className="relative group">
+                                  <img 
+                                    src={imgSrc}
+                                    alt={`Imagen ${idx + 1}`}
+                                    className="w-full h-24 object-cover rounded-lg border-2 border-gray-300"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23ddd" width="100" height="100"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EImagen%3C/text%3E%3C/svg%3E';
+                                    }}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      // Eliminar esta imagen del contenido HTML
+                                      const imgTag = contenido.match(new RegExp(`<img[^>]+src="${imgSrc.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"[^>]*>`))?.[0];
+                                      if (imgTag) {
+                                        const nuevoContenido = contenido.replace(imgTag, '');
+                                        actualizarBloque({ ...bloqueSeleccionado, contenido: nuevoContenido });
+                                      }
+                                    }}
+                                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                  </button>
+                                  <span className="absolute bottom-1 left-1 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
+                                    #{idx + 1}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          
+                          <div className="border-2 border-dashed border-gray-300 rounded-xl p-4">
+                            <input
+                              type="url"
+                              placeholder="URL de la imagen o PDF (ej: https://ejemplo.com/imagen.jpg)"
+                              className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none mb-2"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  const url = (e.target as HTMLInputElement).value;
+                                  if (url) {
+                                    const isPdf = url.toLowerCase().endsWith('.pdf');
+                                    let nuevoContenido = bloqueSeleccionado.contenido || '';
+                                    if (isPdf) {
+                                      nuevoContenido += `\n<p style="text-align:center;margin:1.5rem 0"><a href="${url}" target="_blank" style="color:#EA580C;font-weight:600">📄 Ver PDF</a></p>\n`;
+                                    } else {
+                                      nuevoContenido += `\n<p style="text-align:center;margin:1.5rem 0"><img src="${url}" style="max-width:100%;height:auto;border-radius:0.5rem;box-shadow:0 4px 6px rgba(0,0,0,0.1)" alt="Imagen agregada" /></p>\n`;
+                                    }
+                                    actualizarBloque({ 
+                                      ...bloqueSeleccionado, 
+                                      contenido: nuevoContenido
+                                    });
+                                    (e.target as HTMLInputElement).value = '';
+                                  }
+                                }
+                              }}
+                            />
+                            <p className="text-xs text-gray-500">
+                              📎 Pega la URL de tu imagen o PDF y presiona Enter para agregarla al contenido
+                            </p>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               )}
-
               {bloqueSeleccionado.tipo === 'video' && (
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -508,7 +485,6 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                   />
                 </div>
               )}
-
               {bloqueSeleccionado.tipo === 'documento' && (
                 <div className="space-y-4">
                   <div>
@@ -530,7 +506,6 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                               alert('El archivo es muy grande. Máximo 10MB');
                               return;
                             }
-                            
                             const reader = new FileReader();
                             reader.onloadend = () => {
                               actualizarBloque({ 
@@ -567,7 +542,6 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                       </button>
                     )}
                   </div>
-                  
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Descripción del Documento (opcional)
@@ -582,7 +556,6 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                   </div>
                 </div>
               )}
-
               {bloqueSeleccionado.tipo === 'evaluacion' && (
                 <div className="space-y-4">
                   <div>
@@ -597,7 +570,6 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                       placeholder="Describe de qué trata esta evaluación..."
                     />
                   </div>
-
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Porcentaje Mínimo para Aprobar (%) *
@@ -620,8 +592,7 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                       El estudiante debe obtener al menos este porcentaje para aprobar la evaluación.
                     </p>
                   </div>
-
-                  {/* Selector de modo: IA o Manual */}
+                  {}
                   <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                     <label className="block text-sm font-semibold text-gray-700 mb-3">
                       ¿Cómo quieres crear las preguntas?
@@ -653,7 +624,6 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                       </button>
                     </div>
                   </div>
-
                   <div className="flex items-center justify-between">
                     <label className="text-sm font-semibold text-gray-700">
                       Preguntas de la Evaluación ({bloqueSeleccionado.preguntas?.length || 0})
@@ -669,16 +639,14 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                       </button>
                     )}
                   </div>
-
-                  {/* Panel de IA */}
+                  {}
                   {modoCreacionPreguntas === 'ia' && (
                     <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4 shadow-sm">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="text-2xl">🤖</span>
                         <h4 className="font-bold text-gray-900 text-lg">Generador de Preguntas con IA</h4>
                       </div>
-
-                      {/* Instrucciones */}
+                      {}
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
                         <p className="font-semibold mb-1">💡 Cómo funciona:</p>
                         <ul className="list-disc list-inside space-y-1 ml-2">
@@ -688,10 +656,9 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                           <li>Las preguntas se mezclan en dificultad automáticamente</li>
                         </ul>
                       </div>
-
-                      {/* Configuración de tipos de preguntas */}
+                      {}
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        {/* 2 opciones */}
+                        {}
                         <div>
                           <label className="block text-xs font-semibold text-gray-700 mb-1">
                             📝 2 opciones (V/F)
@@ -704,8 +671,7 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-center font-semibold"
                           />
                         </div>
-
-                        {/* 3 opciones */}
+                        {}
                         <div>
                           <label className="block text-xs font-semibold text-gray-700 mb-1">
                             📋 3 opciones (ABC)
@@ -718,8 +684,7 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-center font-semibold"
                           />
                         </div>
-
-                        {/* 4 opciones */}
+                        {}
                         <div>
                           <label className="block text-xs font-semibold text-gray-700 mb-1">
                             ✅ 4 opciones (ABCD)
@@ -732,8 +697,7 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-center font-semibold"
                           />
                         </div>
-
-                        {/* 5 opciones */}
+                        {}
                         <div>
                           <label className="block text-xs font-semibold text-gray-700 mb-1">
                             📚 5 opciones (ABCDE)
@@ -747,15 +711,13 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                           />
                         </div>
                       </div>
-
-                      {/* Total */}
+                      {}
                       <div className="bg-gray-100 rounded-lg p-3 text-center border border-gray-200">
                         <p className="text-gray-900 font-semibold">
                           Total de preguntas: {preguntasIA.opcion2 + preguntasIA.opcion3 + preguntasIA.opcion4 + preguntasIA.opcion5}
                         </p>
                       </div>
-
-                      {/* Botón generar */}
+                      {}
                       <button
                         type="button"
                         onClick={generarPreguntasConIA}
@@ -774,8 +736,7 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                           </>
                         )}
                       </button>
-
-                      {/* Preguntas generadas */}
+                      {}
                       {preguntasGeneradas.length > 0 && (
                         <div className="bg-gray-50 rounded-xl p-4 mt-4 border border-gray-300">
                           <div className="flex items-center justify-between mb-4">
@@ -790,7 +751,6 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                               Agregar Todas
                             </button>
                           </div>
-
                           <div className="space-y-3 max-h-96 overflow-y-auto">
                             {preguntasGeneradas.map((pregunta, index) => (
                               <div key={index} className="bg-white border border-gray-200 rounded-lg p-4">
@@ -828,8 +788,7 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                                       </div>
                                     )}
                                   </div>
-                                  
-                                  {/* Botones de acción */}
+                                  {}
                                   <div className="flex flex-col gap-2">
                                     <button
                                       type="button"
@@ -861,7 +820,6 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                       )}
                     </div>
                   )}
-
                   {(!bloqueSeleccionado.preguntas || bloqueSeleccionado.preguntas.length === 0) ? (
                     <div className="bg-gray-50 rounded-lg p-4 text-center text-sm text-gray-500">
                       No hay preguntas. Agrega una usando el botón de arriba.
@@ -880,7 +838,6 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                               <Trash2 className="h-4 w-4" />
                             </button>
                           </div>
-                          
                           <input
                             type="text"
                             value={pregunta.pregunta}
@@ -888,7 +845,6 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                             placeholder="Escribe la pregunta..."
                           />
-
                           <div className="flex gap-2">
                             <button
                               type="button"
@@ -913,7 +869,6 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                               Abierta
                             </button>
                           </div>
-
                           {pregunta.tipo === 'multiple' && (
                             <div className="space-y-3">
                               <div className="flex items-center gap-2 bg-blue-50 rounded-lg p-3">
@@ -925,8 +880,6 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                                     const checked = e.target.checked;
                                     console.log('Cambio a múltiple respuestas:', checked);
                                     console.log('Pregunta antes:', pregunta);
-                                    
-                                    // Actualizar ambos campos a la vez
                                     const preguntasActualizadas = bloqueSeleccionado!.preguntas!.map(p =>
                                       p.id === pregunta.id 
                                         ? { 
@@ -936,12 +889,10 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                                           } 
                                         : p
                                     );
-
                                     actualizarBloque({
                                       ...bloqueSeleccionado!,
                                       preguntas: preguntasActualizadas
                                     });
-                                    
                                     console.log('Pregunta después:', preguntasActualizadas.find(p => p.id === pregunta.id));
                                   }}
                                   className="w-4 h-4 cursor-pointer"
@@ -950,7 +901,6 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                                   Permitir múltiples respuestas correctas {pregunta.multipleRespuestas ? '✓' : ''}
                                 </label>
                               </div>
-
                               <div className="space-y-2">
                                 <p className="text-xs text-gray-600 font-semibold">
                                   {pregunta.multipleRespuestas ? '☑️ Marca todas las opciones correctas:' : '⭕ Selecciona la opción correcta:'}
@@ -1017,7 +967,6 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                                   </div>
                                 ))}
                               </div>
-
                               <button
                                 type="button"
                                 onClick={() => {
@@ -1030,7 +979,6 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                               </button>
                             </div>
                           )}
-
                           <div>
                             <label className="block text-xs font-semibold text-gray-600 mb-1">
                               Retroalimentación Positiva
@@ -1043,7 +991,6 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                               placeholder="Mensaje cuando responde correctamente..."
                             />
                           </div>
-                          
                           <div>
                             <label className="block text-xs font-semibold text-gray-600 mb-1">
                               Retroalimentación Negativa
@@ -1066,8 +1013,7 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
           )}
         </div>
       </div>
-      
-      {/* Modal de Edición de Pregunta IA */}
+      {}
       {preguntaEditando && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
@@ -1081,9 +1027,8 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                 ✕
               </button>
             </div>
-
             <div className="space-y-4">
-              {/* Pregunta */}
+              {}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Pregunta
@@ -1099,8 +1044,7 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                   placeholder="Escribe la pregunta..."
                 />
               </div>
-
-              {/* Opciones */}
+              {}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Opciones de Respuesta
@@ -1129,8 +1073,7 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                   ))}
                 </div>
               </div>
-
-              {/* Respuesta Correcta */}
+              {}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Respuesta Correcta
@@ -1150,8 +1093,7 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                   ))}
                 </select>
               </div>
-
-              {/* Retroalimentación Positiva */}
+              {}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Retroalimentación Positiva
@@ -1167,8 +1109,7 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                   placeholder="Mensaje cuando responde correctamente..."
                 />
               </div>
-
-              {/* Retroalimentación Negativa */}
+              {}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Retroalimentación Negativa
@@ -1184,8 +1125,7 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                   placeholder="Mensaje cuando responde incorrectamente..."
                 />
               </div>
-
-              {/* Botones */}
+              {}
               <div className="flex gap-3 pt-4">
                 <button
                   type="button"

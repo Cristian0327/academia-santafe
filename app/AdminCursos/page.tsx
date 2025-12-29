@@ -1,13 +1,12 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { BookOpen, Plus, X, Upload, Save, Edit, FileSpreadsheet } from 'lucide-react';
+import { BookOpen, Plus, X, Upload, Save, Edit, FileSpreadsheet, CheckCircle, Sparkles } from 'lucide-react';
 import apiClient from '@/lib/api-client';
 import ConstructorCurso, { BloqueContenido } from '@/components/ConstructorCurso';
+import { GeneradorCursoPDF } from '@/components/GeneradorCursoPDF';
 import Link from 'next/link';
-
 export default function AdminCursosPage() {
   const [cursos, setCursos] = useState<any[]>([]);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
@@ -28,11 +27,9 @@ export default function AdminCursosPage() {
     evaluaciones: [] as any[],
     duracionEstimada: 60,
     prerequisitos: '',
-    certificadoTemplate: '',
-    emailReporte: ''
+    certificadoTemplate: ''
   });
   const [bloques, setBloques] = useState<BloqueContenido[]>([]);
-
   const [mostrarModalEvaluacion, setMostrarModalEvaluacion] = useState(false);
   const [evaluacionTemporal, setEvaluacionTemporal] = useState({
     tipo: 'multiple',
@@ -47,18 +44,20 @@ export default function AdminCursosPage() {
   const [subiendoImagen, setSubiendoImagen] = useState(false);
   const [archivoCertificado, setArchivoCertificado] = useState<File | null>(null);
   const [subiendoCertificado, setSubiendoCertificado] = useState(false);
+  const [modalEliminar, setModalEliminar] = useState<{visible: boolean, curso: any | null}>({visible: false, curso: null});
+  const [modalExito, setModalExito] = useState<{visible: boolean, mensaje: string}>({visible: false, mensaje: ''});
+  const [mostrarGeneradorIA, setMostrarGeneradorIA] = useState(false);
 
-  // Cargar cursos desde Firestore
   useEffect(() => {
     cargarCursos();
   }, []);
-
   const cargarCursos = async () => {
     try {
       const cursosData = await apiClient.listarCursos();
-      // Ordenar por fecha de creación descendente
       const cursosOrdenados = cursosData.sort((a: any, b: any) => {
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        const fechaA = a.created_at || a.createdAt || '1970-01-01';
+        const fechaB = b.created_at || b.createdAt || '1970-01-01';
+        return new Date(fechaB).getTime() - new Date(fechaA).getTime();
       });
       setCursos(cursosOrdenados);
     } catch (error) {
@@ -66,11 +65,13 @@ export default function AdminCursosPage() {
       setCursos([]);
     }
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setCargando(true);
     
+    // Prevenir doble submit
+    if (cargando) return;
+    
+    setCargando(true);
     try {
       const datosCurso = {
         titulo: formData.titulo,
@@ -87,46 +88,20 @@ export default function AdminCursosPage() {
         duracionEstimada: formData.duracionEstimada,
         prerequisitos: formData.prerequisitos,
         certificadoTemplate: formData.certificadoTemplate,
-        emailReporte: formData.emailReporte,
         bloques: JSON.stringify(bloques),
+        evaluaciones: JSON.stringify(formData.evaluaciones),
         activo: true,
         ...(modoEdicion && { id: modoEdicion })
       };
       
+      console.log('📝 Guardando curso:', datosCurso);
       const cursoCreado = await apiClient.guardarCurso(datosCurso);
-      
-      console.log('Curso guardado:', cursoCreado);
-      
-      if (modoEdicion) {
-        alert('Curso actualizado exitosamente');
-      } else {
-        alert('Curso creado exitosamente');
-      }
+      console.log('✅ Curso guardado:', cursoCreado);
       
       await cargarCursos();
       
-      // Enviar notificación solo para cursos nuevos
-      if (!modoEdicion) {
-        try {
-          const responseNotif = await fetch('/api/notificaciones', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              tipo: 'nuevo_curso',
-              titulo: '¡Nuevo curso disponible!',
-              mensaje: `Se ha publicado el curso "${datosCurso.titulo}" en la categoría ${datosCurso.categoria}. ¡Inscríbete ahora!`,
-              cursoId: cursoCreado.id
-            })
-          });
-          const resultNotif = await responseNotif.json();
-          console.log('📢 Notificación enviada:', resultNotif);
-        } catch (error) {
-          console.error('Error al enviar notificación:', error);
-        }
-      }
-      
-      // Reset form and edit mode
       setModoEdicion(null);
+      setMostrarFormulario(false);
       setFormData({
         titulo: '',
         descripcion: '',
@@ -142,18 +117,114 @@ export default function AdminCursosPage() {
         evaluaciones: [],
         duracionEstimada: 60,
         prerequisitos: '',
-        certificadoTemplate: '',
-        emailReporte: ''
+        certificadoTemplate: ''
       });
       setBloques([]);
-      setMostrarFormulario(false);
-      alert('Curso creado exitosamente con ' + bloques.length + ' bloques! Se ha notificado a todos los usuarios.');
+      
+      if (modoEdicion) {
+        setModalExito({visible: true, mensaje: 'Curso actualizado exitosamente'});
+      } else {
+        setModalExito({visible: true, mensaje: 'Curso creado exitosamente'});
+      }
+      
+      setTimeout(() => {
+        setModalExito({visible: false, mensaje: ''});
+      }, 2000);
+      
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     } catch (error: any) {
       console.error('Error completo:', error);
-      alert('Error al crear el curso: ' + (error.message || JSON.stringify(error)));
+      alert('Error al guardar el curso: ' + (error.message || JSON.stringify(error)));
     } finally {
       setCargando(false);
     }
+  };
+
+  const handleCursoGeneradoIA = (data: any) => {
+    const { curso: cursoGenerado, imagenes = [] } = data;
+    console.log('Curso recibido en AdminCursos:', cursoGenerado);
+    console.log('Bloques recibidos:', cursoGenerado.bloques?.length || 0);
+    console.log('Imágenes extraídas:', imagenes.length);
+    
+    // Llenar el formulario con los datos generados
+    setFormData({
+      titulo: cursoGenerado.titulo || '',
+      descripcion: cursoGenerado.descripcion || '',
+      categoria: cursoGenerado.categoria || 'General',
+      duracion: cursoGenerado.duracion || '',
+      nivel: cursoGenerado.nivel || 'Principiante',
+      instructor: cursoGenerado.instructor || 'Coordinador SST - Academia Santafé',
+      imagen: '',
+      contenido: cursoGenerado.descripcion || '',
+      precio: '0',
+      videoUrl: '',
+      claveInscripcion: '',
+      evaluaciones: [],
+      duracionEstimada: 60,
+      prerequisitos: cursoGenerado.prerequisitos || '',
+      certificadoTemplate: ''
+    });
+
+    // Convertir los bloques generados al formato del sistema
+    const bloquesConvertidos = cursoGenerado.bloques.map((bloque: any, index: number) => {
+      // Para evaluaciones, agregar ID único a cada pregunta
+      const preguntasConId = (bloque.preguntas || []).map((preg: any, idx: number) => ({
+        ...preg,
+        id: `pregunta-${Date.now()}-${index}-${idx}`
+      }));
+
+      return {
+        id: `bloque-${Date.now()}-${index}`,
+        titulo: bloque.titulo,
+        tipo: bloque.tipo === 'leccion' ? 'lectura' : bloque.tipo,
+        descripcion: bloque.descripcion || '',
+        contenido: bloque.contenido || '',
+        duracion: bloque.duracion || (bloque.tipo === 'evaluacion' ? (bloque.preguntas?.length * 5 || 15) : 15),
+        videoUrl: bloque.videoUrl || '',
+        preguntas: preguntasConId,
+        puntajeMinimo: bloque.puntajeMinimo || 70,
+        orden: index
+      };
+    });
+
+    setBloques(bloquesConvertidos);
+    setMostrarGeneradorIA(false);
+    setMostrarFormulario(true);
+    
+    // Mostrar modal de éxito con imágenes extraídas
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;overflow-y:auto';
+    
+    const imagenesHTML = imagenes.length > 0 ? `
+      <div style="margin-top:1.5rem;max-height:300px;overflow-y:auto;border:2px dashed #EA580C;border-radius:0.5rem;padding:1rem">
+        <p style="font-weight:600;color:#EA580C;margin-bottom:1rem">📸 ${imagenes.length} imágenes extraídas:</p>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem">
+          ${imagenes.map((img: string, idx: number) => `
+            <div style="position:relative">
+              <img src="${img}" style="width:100%;height:80px;object-fit:cover;border-radius:0.5rem;border:2px solid #E5E7EB" />
+              <button onclick="navigator.clipboard.writeText('${img}');alert('URL copiada al portapapeles')" style="position:absolute;bottom:4px;right:4px;background:#EA580C;color:white;border:none;border-radius:0.25rem;padding:2px 6px;font-size:10px;cursor:pointer">Copiar</button>
+            </div>
+          `).join('')}
+        </div>
+        <p style="font-size:0.75rem;color:#6B7280;margin-top:0.5rem">💡 Tip: Haz clic en "Copiar" y pega la URL en "Agregar Imagen o PDF" de cualquier lectura</p>
+      </div>
+    ` : '';
+    
+    modal.innerHTML = `
+      <div style="background:white;border-radius:1rem;padding:2rem;max-width:600px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1);text-align:center;max-height:90vh;overflow-y:auto">
+        <div style="width:64px;height:64px;background:#EA580C;border-radius:50%;margin:0 auto 1rem;display:flex;align-items:center;justify-content:center">
+          <svg style="width:32px;height:32px;color:white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+        </div>
+        <h2 style="font-size:1.5rem;font-weight:bold;color:#111827;margin-bottom:0.5rem">¡Curso generado con IA!</h2>
+        <p style="color:#6B7280;margin-bottom:0.5rem">- ${bloquesConvertidos.length} bloques creados<br>- Revisa y edita el contenido antes de guardar</p>
+        ${imagenesHTML}
+        <button onclick="this.parentElement.parentElement.remove()" style="background:#EA580C;color:white;padding:0.75rem 2rem;border-radius:0.5rem;border:none;font-weight:600;cursor:pointer;font-size:1rem;margin-top:1rem">Aceptar</button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    setTimeout(() => modal.remove(), 15000);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -162,33 +233,27 @@ export default function AdminCursosPage() {
       [e.target.name]: e.target.value
     });
   };
-
   const eliminarCurso = async (id: string) => {
     const curso = cursos.find(c => c.id === id);
-    const confirmacion = window.confirm(
-      `¿Estás seguro de eliminar el curso "${curso?.titulo}"?\n\n` +
-      'Esta acción no se puede deshacer y se perderán todos los datos asociados.'
-    );
-    
-    if (!confirmacion) return;
-    
+    setModalEliminar({visible: true, curso});
+  };
+  const confirmarEliminacion = async () => {
+    if (!modalEliminar.curso) return;
     try {
-      await apiClient.eliminarCurso(id);
+      const cursoId = String(modalEliminar.curso.id);
+      await apiClient.eliminarCurso(cursoId);
+      setModalEliminar({visible: false, curso: null});
       await cargarCursos();
-      alert('✅ Curso eliminado exitosamente');
     } catch (error) {
       console.error('Error al eliminar curso:', error);
-      alert('❌ Error al eliminar el curso');
+      alert('No se pudo eliminar el curso. Verifica los permisos en Supabase.');
     }
   };
-
-  // Funciones para manejar evaluaciones
   const agregarEvaluacion = () => {
     if (!evaluacionTemporal.pregunta.trim()) {
       alert('Debes escribir una pregunta');
       return;
     }
-
     if (evaluacionTemporal.tipo === 'multiple') {
       const opcionesValidas = evaluacionTemporal.opciones.filter(op => op.trim());
       if (opcionesValidas.length < 2) {
@@ -196,18 +261,15 @@ export default function AdminCursosPage() {
         return;
       }
     }
-
     const nuevaEvaluacion = {
       id: Date.now().toString(),
       ...evaluacionTemporal,
       opciones: evaluacionTemporal.tipo === 'multiple' ? evaluacionTemporal.opciones : []
     };
-
     setFormData({
       ...formData,
       evaluaciones: [...formData.evaluaciones, nuevaEvaluacion]
     });
-
     setEvaluacionTemporal({
       tipo: 'multiple',
       pregunta: '',
@@ -215,24 +277,20 @@ export default function AdminCursosPage() {
       respuestaCorrecta: 0,
       retroalimentacion: ''
     });
-
     setMostrarModalEvaluacion(false);
   };
-
   const eliminarEvaluacion = (id: string) => {
     setFormData({
       ...formData,
       evaluaciones: formData.evaluaciones.filter(ev => ev.id !== id)
     });
   };
-
   const handleEvaluacionChange = (field: string, value: any) => {
     setEvaluacionTemporal({
       ...evaluacionTemporal,
       [field]: value
     });
   };
-
   const handleOpcionChange = (index: number, value: string) => {
     const nuevasOpciones = [...evaluacionTemporal.opciones];
     nuevasOpciones[index] = value;
@@ -241,26 +299,20 @@ export default function AdminCursosPage() {
       opciones: nuevasOpciones
     });
   };
-
   const handlePDFUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     if (file.type !== 'application/pdf') {
       alert('Solo se permiten archivos PDF');
       return;
     }
-
     if (file.size > 5 * 1024 * 1024) { // 5MB máximo
       alert('El archivo es demasiado grande. Máximo 5MB');
       return;
     }
-
     setArchivoPDF(file);
     setSubiendoPDF(true);
-
     try {
-      // Convertir a base64 para guardar en Supabase
       const reader = new FileReader();
       reader.onload = () => {
         const base64 = reader.result as string;
@@ -278,30 +330,24 @@ export default function AdminCursosPage() {
       setSubiendoPDF(false);
     }
   };
-
   const eliminarPDF = () => {
     setArchivoPDF(null);
     setFormData({ ...formData, certificadoTemplate: '' });
   };
-
   const handleImagenUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const tiposPermitidos = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     if (!tiposPermitidos.includes(file.type)) {
       alert('Por favor selecciona una imagen válida (JPEG, JPG, PNG, GIF, WEBP)');
       return;
     }
-
     if (file.size > 5 * 1024 * 1024) {
       alert('La imagen es demasiado grande. Máximo 5MB');
       return;
     }
-
     setArchivoImagen(file);
     setSubiendoImagen(true);
-
     try {
       const reader = new FileReader();
       reader.onload = () => {
@@ -320,30 +366,24 @@ export default function AdminCursosPage() {
       setSubiendoImagen(false);
     }
   };
-
   const eliminarImagen = () => {
     setArchivoImagen(null);
     setFormData({ ...formData, imagen: '' });
   };
-
   const handleCertificadoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const tiposPermitidos = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     if (!tiposPermitidos.includes(file.type)) {
       alert('Por favor selecciona un PDF o imagen válida (JPEG, JPG, PNG, GIF, WEBP)');
       return;
     }
-
     if (file.size > 5 * 1024 * 1024) {
       alert('El archivo es demasiado grande. Máximo 5MB');
       return;
     }
-
     setArchivoCertificado(file);
     setSubiendoCertificado(true);
-
     try {
       const reader = new FileReader();
       reader.onload = () => {
@@ -362,30 +402,27 @@ export default function AdminCursosPage() {
       setSubiendoCertificado(false);
     }
   };
-
   const eliminarCertificado = () => {
     setArchivoCertificado(null);
     setFormData({ ...formData, certificadoTemplate: '' });
   };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Header */}
+        {}
         <div className="mb-8">
           <div>
             <h1 className="text-4xl font-bold text-gray-900 mb-2">Administración de Cursos</h1>
             <p className="text-gray-600">Crea y gestiona los cursos de Academia Santafé</p>
           </div>
         </div>
-
-        {/* Botón Crear Curso */}
-        <div className="mb-8">
+        {}
+        <div className="mb-8 flex gap-4">
           <button
             onClick={() => {
               setMostrarFormulario(!mostrarFormulario);
+              setMostrarGeneradorIA(false);
               if (mostrarFormulario) setModoEdicion(null);
             }}
             className="bg-primary-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-primary-700 transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl"
@@ -393,19 +430,37 @@ export default function AdminCursosPage() {
             {mostrarFormulario ? <X className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
             {mostrarFormulario ? 'Cancelar' : 'Crear Nuevo Curso'}
           </button>
+
+          <button
+            onClick={() => {
+              setMostrarGeneradorIA(!mostrarGeneradorIA);
+              setMostrarFormulario(false);
+              setModoEdicion(null);
+            }}
+            className="bg-secondary-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-secondary-700 transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl"
+          >
+            {mostrarGeneradorIA ? <X className="h-5 w-5" /> : <Sparkles className="h-5 w-5" />}
+            {mostrarGeneradorIA ? 'Cancelar' : 'Generar con IA desde PDF'}
+          </button>
         </div>
 
-        {/* Formulario de Creación */}
+        {}
+        {mostrarGeneradorIA && (
+          <div className="mb-8">
+            <GeneradorCursoPDF onCursoGenerado={handleCursoGeneradoIA} />
+          </div>
+        )}
+
+        {}
         {mostrarFormulario && (
           <div className="bg-white rounded-2xl shadow-xl p-8 mb-8 border border-gray-100">
             <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
               <BookOpen className="h-6 w-6 text-primary-600" />
               {modoEdicion ? 'Editar Curso' : 'Nuevo Curso'}
             </h2>
-            
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
-                {/* Título */}
+                {}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Título del Curso *
@@ -420,8 +475,7 @@ export default function AdminCursosPage() {
                     placeholder="Ej: Seguridad Industrial Básica"
                   />
                 </div>
-
-                {/* Categoría */}
+                {}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Categoría *
@@ -436,8 +490,7 @@ export default function AdminCursosPage() {
                     placeholder="Ej: Seguridad, Producción, Calidad"
                   />
                 </div>
-
-                {/* Instructor */}
+                {}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Instructor *
@@ -452,8 +505,7 @@ export default function AdminCursosPage() {
                     placeholder="Nombre del instructor"
                   />
                 </div>
-
-                {/* Duración */}
+                {}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Duración *
@@ -468,26 +520,6 @@ export default function AdminCursosPage() {
                     placeholder="Ej: 4 horas, 2 semanas"
                   />
                 </div>
-
-                {/* Email para Reportes */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    📧 Correo para Reportes Diarios
-                  </label>
-                  <input
-                    type="email"
-                    name="emailReporte"
-                    value={formData.emailReporte}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
-                    placeholder="admin@empresa.com"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Los reportes diarios de este curso se enviarán a este correo
-                  </p>
-                </div>
-
-                {/* Nivel */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Nivel
@@ -503,8 +535,7 @@ export default function AdminCursosPage() {
                     <option>Avanzado</option>
                   </select>
                 </div>
-
-                {/* Clave Inscripción */}
+                {}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Clave de Inscripción *
@@ -519,8 +550,7 @@ export default function AdminCursosPage() {
                     placeholder="Clave que el instructor proporcionará"
                   />
                 </div>
-
-                {/* Imagen del Curso */}
+                {}
                 <div className="md:col-span-2">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Imagen del Curso (Portada)
@@ -581,10 +611,8 @@ export default function AdminCursosPage() {
                     )}
                   </div>
                 </div>
-
               </div>
-
-              {/* Descripción */}
+              {}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Descripción *
@@ -599,8 +627,7 @@ export default function AdminCursosPage() {
                   placeholder="Describe el curso, objetivos, y qué aprenderán los estudiantes..."
                 />
               </div>
-
-              {/* Contenido del Curso */}
+              {}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Contenido del Curso
@@ -614,16 +641,14 @@ export default function AdminCursosPage() {
                   placeholder="Resumen breve de los temas que se cubrirán en el curso..."
                 />
               </div>
-
-              {/* Constructor de Curso */}
+              {}
               <div className="border-t-2 border-gray-200 pt-6">
                 <ConstructorCurso 
                   bloques={bloques}
                   onBloquesChange={setBloques}
                 />
               </div>
-
-              {/* Plantilla de Certificado */}
+              {}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Plantilla del Certificado (PDF o Imagen)
@@ -685,15 +710,15 @@ export default function AdminCursosPage() {
                   <strong>Tip:</strong> Diseña tu archivo (A4 horizontal) dejando espacio en el centro para el texto dinámico.
                 </p>
               </div>
-
-              {/* Botones */}
+              {}
               <div className="flex gap-4 pt-6 border-t-2 border-gray-200">
                 <button
                   type="submit"
-                  className="bg-primary-600 text-white px-8 py-3 rounded-xl font-semibold hover:bg-primary-700 transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl"
+                  disabled={cargando}
+                  className="bg-primary-600 text-white px-8 py-3 rounded-xl font-semibold hover:bg-primary-700 transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Save className="h-5 w-5" />
-                  {modoEdicion ? 'Actualizar Curso' : 'Guardar Curso'}
+                  {cargando ? 'Guardando...' : (modoEdicion ? 'Actualizar Curso' : 'Guardar Curso')}
                 </button>
                 <button
                   type="button"
@@ -709,13 +734,11 @@ export default function AdminCursosPage() {
             </form>
           </div>
         )}
-
-        {/* Lista de Cursos */}
+        {}
         <div>
           <h2 className="text-2xl font-bold text-gray-900 mb-6">
             Cursos Creados ({cursos.length})
           </h2>
-          
           {cursos.length === 0 ? (
             <div className="bg-white rounded-2xl shadow-lg p-12 text-center border border-gray-100">
               <BookOpen className="h-16 w-16 text-gray-300 mx-auto mb-4" />
@@ -730,8 +753,8 @@ export default function AdminCursosPage() {
                     className="h-48 bg-primary-500 flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity"
                     onClick={() => window.location.href = `/curso/${curso.id}?preview=true`}
                   >
-                    {curso.imagen ? (
-                      <img src={curso.imagen} alt={curso.titulo} className="w-full h-full object-cover" />
+                    {(curso.imagen_portada || curso.imagen) ? (
+                      <img src={curso.imagen_portada || curso.imagen} alt={curso.titulo} className="w-full h-full object-cover" />
                     ) : (
                       <BookOpen className="h-16 w-16 text-white opacity-50" />
                     )}
@@ -744,13 +767,14 @@ export default function AdminCursosPage() {
                       <div className="flex gap-2">
                         <button
                           onClick={() => {
-                            // Cargar el curso para editar
                             try {
                               console.log('Curso a editar:', curso);
                               const bloquesData = curso.bloques && typeof curso.bloques === 'string' && curso.bloques.trim() !== '' 
                                 ? JSON.parse(curso.bloques) 
                                 : [];
-                              
+                              const evaluacionesData = curso.evaluaciones && typeof curso.evaluaciones === 'string' && curso.evaluaciones.trim() !== ''
+                                ? JSON.parse(curso.evaluaciones)
+                                : [];
                               setFormData({
                                 titulo: curso.titulo || '',
                                 descripcion: curso.descripcion || '',
@@ -758,16 +782,15 @@ export default function AdminCursosPage() {
                                 duracion: curso.duracion || '',
                                 nivel: curso.nivel || 'Principiante',
                                 categoria: curso.categoria || '',
-                                imagen: curso.imagen || '',
-                                videoUrl: curso.videoUrl || '',
+                                imagen: curso.imagen_portada || curso.imagen || '',
+                                videoUrl: curso.video_url || curso.videoUrl || '',
                                 contenido: curso.contenido || '',
                                 precio: curso.precio?.toString() || '0',
-                                claveInscripcion: curso.claveInscripcion || '',
-                                evaluaciones: [],
-                                duracionEstimada: curso.duracionEstimada || 60,
+                                claveInscripcion: curso.clave_inscripcion || curso.claveInscripcion || '',
+                                evaluaciones: evaluacionesData,
+                                duracionEstimada: curso.duracion_estimada || curso.duracionEstimada || 60,
                                 prerequisitos: curso.prerequisitos || '',
-                                certificadoTemplate: curso.certificadoTemplate || '',
-                                emailReporte: curso.emailReporte || ''
+                                certificadoTemplate: curso.certificado_template || curso.certificadoTemplate || ''
                               });
                               setBloques(bloquesData);
                               setModoEdicion(curso.id);
@@ -803,12 +826,9 @@ export default function AdminCursosPage() {
                       <p><strong>Instructor:</strong> {curso.instructor}</p>
                       <p><strong>Duración:</strong> {curso.duracion}</p>
                       <p><strong>Nivel:</strong> {curso.nivel}</p>
-                      {curso.emailReporte && (
-                        <p className="text-xs text-green-600">
-                          📧 {curso.emailReporte}
-                        </p>
+                      {(curso.created_at || curso.createdAt) && (
+                        <p className="text-xs text-gray-400">Creado: {new Date(curso.created_at || curso.createdAt).toLocaleDateString('es-CO')}</p>
                       )}
-                      <p className="text-xs text-gray-400">Creado: {new Date(curso.createdAt || curso.fechacreacion).toLocaleDateString('es-CO')}</p>
                     </div>
                     <div className="flex gap-2">
                       <button
@@ -833,8 +853,70 @@ export default function AdminCursosPage() {
           )}
         </div>
       </div>
-
       <Footer />
+      {}
+      {modalEliminar.visible && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+                <X className="h-8 w-8 text-red-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                ¿Eliminar este curso?
+              </h3>
+              <p className="text-gray-600 mb-1 font-semibold">
+                {modalEliminar.curso?.titulo}
+              </p>
+              <p className="text-sm text-gray-500 mb-6">
+                Esta acción no se puede deshacer y se perderán todos los datos asociados.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setModalEliminar({visible: false, curso: null})}
+                  className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-all duration-300"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmarEliminacion}
+                  className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-all duration-300 shadow-lg hover:shadow-xl"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modalExito.visible && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
+                <CheckCircle className="h-8 w-8 text-green-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                ¡Éxito!
+              </h3>
+              <p className="text-gray-600 mb-6">
+                {modalExito.mensaje}
+              </p>
+              <button
+                onClick={() => {
+                  setModalExito({visible: false, mensaje: ''});
+                  setMostrarFormulario(false);
+                  setModoEdicion(null);
+                }}
+                className="w-full px-4 py-3 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition-all duration-300 shadow-lg hover:shadow-xl"
+              >
+                Aceptar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

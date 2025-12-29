@@ -1,0 +1,10 @@
+{
+  "buildCommand": "npm run build",
+  "framework": "nextjs",
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "https://jhpnqoxeldbkcbsyfcjf.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_F1kMH3wYOW5ySpq-HftukQ_FLEsmnEm",
+    "GEMINI_API_KEY": "AIzaSyBgYwU0qfHansyObZ_Et2bLQU1nzpelzCY",
+    "ADMIN_EMAILS": "aprendizcomunicaciones@santafe.com.co"
+  }
+}

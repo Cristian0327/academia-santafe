@@ -1,0 +1,12 @@
+COPIA Y PEGA ESTO EN SUPABASE SQL EDITOR:
+
+ALTER TABLE cursos 
+ADD COLUMN bloques JSONB,
+ADD COLUMN evaluaciones JSONB,
+ADD COLUMN contenido TEXT,
+ADD COLUMN prerequisitos TEXT,
+ADD COLUMN certificado_template TEXT,
+ADD COLUMN email_reporte TEXT,
+ADD COLUMN clave_inscripcion TEXT,
+ADD COLUMN precio DECIMAL DEFAULT 0,
+ADD COLUMN activo BOOLEAN DEFAULT TRUE;

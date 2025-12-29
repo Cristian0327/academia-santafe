@@ -1,14 +1,11 @@
 'use client';
-
 import { useState } from 'react';
-
 interface CalificacionLadrillosProps {
   calificacion: number;
   onCalificar?: (valor: number) => void;
   soloLectura?: boolean;
   tamaño?: 'sm' | 'md' | 'lg';
 }
-
 export default function CalificacionLadrillos({ 
   calificacion, 
   onCalificar, 
@@ -16,19 +13,16 @@ export default function CalificacionLadrillos({
   tamaño = 'md'
 }: CalificacionLadrillosProps) {
   const [hover, setHover] = useState(0);
-
   const tamaños = {
     sm: 'w-6 h-6',
     md: 'w-8 h-8',
     lg: 'w-12 h-12'
   };
-
   const espaciado = {
     sm: 'gap-1',
     md: 'gap-2',
     lg: 'gap-3'
   };
-
   return (
     <div className={`flex items-center ${espaciado[tamaño]}`}>
       {[1, 2, 3, 4, 5].map((valor) => (
@@ -49,7 +43,7 @@ export default function CalificacionLadrillos({
             xmlns="http://www.w3.org/2000/svg"
             className="w-full h-full"
           >
-            {/* Fila superior de ladrillos pequeños */}
+            {}
             <rect
               x="4"
               y="8"
@@ -74,8 +68,7 @@ export default function CalificacionLadrillos({
                   : 'fill-gray-300'
               }`}
             />
-            
-            {/* Fila media */}
+            {}
             <rect
               x="4"
               y="16"
@@ -112,8 +105,7 @@ export default function CalificacionLadrillos({
                   : 'fill-gray-300'
               }`}
             />
-            
-            {/* Fila inferior */}
+            {}
             <rect
               x="4"
               y="24"
