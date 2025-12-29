@@ -238,55 +238,11 @@ export default function VisorBloques({ bloques, leccionActiva, onLeccionChange, 
               </div>
               {}
               {bloqueSeleccionado.tipo === 'lectura' && (
-                <div className="prose prose-lg max-w-none bg-gray-50 rounded-xl p-8 shadow-inner" style={{ minHeight: '500px' }}>
-                  <ReactMarkdown
-                    components={{
-                      a: ({node, href, children, ...props}) => {
-                        if (href && href.toLowerCase().endsWith('.pdf')) {
-                          return (
-                            <div className="not-prose my-6">
-                              <div className="bg-white border-2 border-gray-300 rounded-xl overflow-hidden shadow-lg">
-                                <div className="bg-gray-100 px-4 py-3 border-b border-gray-300 flex items-center justify-between">
-                                  <span className="font-semibold text-gray-700 flex items-center gap-2">
-                                    <File className="h-5 w-5" />
-                                    Documento PDF
-                                  </span>
-                                  <a 
-                                    href={href} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    className="text-primary-600 hover:text-primary-700 text-sm font-semibold"
-                                  >
-                                    Abrir en nueva pestaña →
-                                  </a>
-                                </div>
-                                <iframe
-                                  src={href}
-                                  className="w-full"
-                                  style={{ height: '600px' }}
-                                  title="Visor de PDF"
-                                />
-                              </div>
-                            </div>
-                          );
-                        }
-                        return <a href={href} {...props}>{children}</a>;
-                      },
-                      img: ({node, src, alt, ...props}) => {
-                        return (
-                          <img 
-                            src={src} 
-                            alt={alt || 'Imagen'} 
-                            className="rounded-lg shadow-md max-w-full h-auto my-4"
-                            {...props}
-                          />
-                        );
-                      }
-                    }}
-                  >
-                    {bloqueSeleccionado.contenido || ''}
-                  </ReactMarkdown>
-                </div>
+                <div 
+                  className="prose prose-lg max-w-none bg-gray-50 rounded-xl p-8 shadow-inner" 
+                  style={{ minHeight: '500px' }}
+                  dangerouslySetInnerHTML={{ __html: bloqueSeleccionado.contenido || '' }}
+                />
               )}
               {bloqueSeleccionado.tipo === 'video' && bloqueSeleccionado.videoUrl && (() => {
                 let videoId = '';
@@ -300,10 +256,10 @@ export default function VisorBloques({ bloques, leccionActiva, onLeccionChange, 
                 }
                 return (
                 <div className="space-y-4">
-                  <div className="aspect-video bg-gray-900 rounded-xl overflow-hidden shadow-2xl" style={{ minHeight: '500px' }}>
+                  <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
                     <iframe
                       src={`https://www.youtube.com/embed/${videoId}`}
-                      className="w-full h-full"
+                      className="absolute top-0 left-0 w-full h-full rounded-xl shadow-2xl"
                       allowFullScreen
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     ></iframe>

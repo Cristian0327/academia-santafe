@@ -110,11 +110,16 @@ export const supabaseHelpers = {
     return data;
   },
   async obtenerCursos() {
+    console.log('🔍 Iniciando obtenerCursos...');
     const { data, error } = await supabase
       .from('cursos')
-      .select('id, titulo, descripcion, instructor, categoria, duracion, duracion_estimada, nivel, imagen_portada, video_url, precio, activo, created_at, clave_inscripcion')
+      .select('*')
       .order('created_at', { ascending: false });
-    if (error) throw error;
+    console.log('📊 Resultado query - data:', data?.length, 'error:', error);
+    if (error) {
+      console.error('❌ Error en obtenerCursos:', JSON.stringify(error));
+      throw error;
+    }
     return data || [];
   },
   async obtenerCurso(id: number) {

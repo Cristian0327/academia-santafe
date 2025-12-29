@@ -5,7 +5,6 @@ import { Footer } from '@/components/Footer';
 import { BookOpen, Plus, X, Upload, Save, Edit, FileSpreadsheet, CheckCircle, Sparkles } from 'lucide-react';
 import apiClient from '@/lib/api-client';
 import ConstructorCurso, { BloqueContenido } from '@/components/ConstructorCurso';
-import { GeneradorCursoPDF } from '@/components/GeneradorCursoPDF';
 import Link from 'next/link';
 export default function AdminCursosPage() {
   const [cursos, setCursos] = useState<any[]>([]);
@@ -46,7 +45,6 @@ export default function AdminCursosPage() {
   const [subiendoCertificado, setSubiendoCertificado] = useState(false);
   const [modalEliminar, setModalEliminar] = useState<{visible: boolean, curso: any | null}>({visible: false, curso: null});
   const [modalExito, setModalExito] = useState<{visible: boolean, mensaje: string}>({visible: false, mensaje: ''});
-  const [mostrarGeneradorIA, setMostrarGeneradorIA] = useState(false);
 
   useEffect(() => {
     cargarCursos();
@@ -138,93 +136,6 @@ export default function AdminCursosPage() {
     } finally {
       setCargando(false);
     }
-  };
-
-  const handleCursoGeneradoIA = (data: any) => {
-    const { curso: cursoGenerado, imagenes = [] } = data;
-    console.log('Curso recibido en AdminCursos:', cursoGenerado);
-    console.log('Bloques recibidos:', cursoGenerado.bloques?.length || 0);
-    console.log('Imágenes extraídas:', imagenes.length);
-    
-    // Llenar el formulario con los datos generados
-    setFormData({
-      titulo: cursoGenerado.titulo || '',
-      descripcion: cursoGenerado.descripcion || '',
-      categoria: cursoGenerado.categoria || 'General',
-      duracion: cursoGenerado.duracion || '',
-      nivel: cursoGenerado.nivel || 'Principiante',
-      instructor: cursoGenerado.instructor || 'Coordinador SST - Academia Santafé',
-      imagen: '',
-      contenido: cursoGenerado.descripcion || '',
-      precio: '0',
-      videoUrl: '',
-      claveInscripcion: '',
-      evaluaciones: [],
-      duracionEstimada: 60,
-      prerequisitos: cursoGenerado.prerequisitos || '',
-      certificadoTemplate: ''
-    });
-
-    // Convertir los bloques generados al formato del sistema
-    const bloquesConvertidos = cursoGenerado.bloques.map((bloque: any, index: number) => {
-      // Para evaluaciones, agregar ID único a cada pregunta
-      const preguntasConId = (bloque.preguntas || []).map((preg: any, idx: number) => ({
-        ...preg,
-        id: `pregunta-${Date.now()}-${index}-${idx}`
-      }));
-
-      return {
-        id: `bloque-${Date.now()}-${index}`,
-        titulo: bloque.titulo,
-        tipo: bloque.tipo === 'leccion' ? 'lectura' : bloque.tipo,
-        descripcion: bloque.descripcion || '',
-        contenido: bloque.contenido || '',
-        duracion: bloque.duracion || (bloque.tipo === 'evaluacion' ? (bloque.preguntas?.length * 5 || 15) : 15),
-        videoUrl: bloque.videoUrl || '',
-        preguntas: preguntasConId,
-        puntajeMinimo: bloque.puntajeMinimo || 70,
-        orden: index
-      };
-    });
-
-    setBloques(bloquesConvertidos);
-    setMostrarGeneradorIA(false);
-    setMostrarFormulario(true);
-    
-    // Mostrar modal de éxito con imágenes extraídas
-    const modal = document.createElement('div');
-    modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;overflow-y:auto';
-    
-    const imagenesHTML = imagenes.length > 0 ? `
-      <div style="margin-top:1.5rem;max-height:300px;overflow-y:auto;border:2px dashed #EA580C;border-radius:0.5rem;padding:1rem">
-        <p style="font-weight:600;color:#EA580C;margin-bottom:1rem">📸 ${imagenes.length} imágenes extraídas:</p>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem">
-          ${imagenes.map((img: string, idx: number) => `
-            <div style="position:relative">
-              <img src="${img}" style="width:100%;height:80px;object-fit:cover;border-radius:0.5rem;border:2px solid #E5E7EB" />
-              <button onclick="navigator.clipboard.writeText('${img}');alert('URL copiada al portapapeles')" style="position:absolute;bottom:4px;right:4px;background:#EA580C;color:white;border:none;border-radius:0.25rem;padding:2px 6px;font-size:10px;cursor:pointer">Copiar</button>
-            </div>
-          `).join('')}
-        </div>
-        <p style="font-size:0.75rem;color:#6B7280;margin-top:0.5rem">💡 Tip: Haz clic en "Copiar" y pega la URL en "Agregar Imagen o PDF" de cualquier lectura</p>
-      </div>
-    ` : '';
-    
-    modal.innerHTML = `
-      <div style="background:white;border-radius:1rem;padding:2rem;max-width:600px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1);text-align:center;max-height:90vh;overflow-y:auto">
-        <div style="width:64px;height:64px;background:#EA580C;border-radius:50%;margin:0 auto 1rem;display:flex;align-items:center;justify-content:center">
-          <svg style="width:32px;height:32px;color:white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-          </svg>
-        </div>
-        <h2 style="font-size:1.5rem;font-weight:bold;color:#111827;margin-bottom:0.5rem">¡Curso generado con IA!</h2>
-        <p style="color:#6B7280;margin-bottom:0.5rem">- ${bloquesConvertidos.length} bloques creados<br>- Revisa y edita el contenido antes de guardar</p>
-        ${imagenesHTML}
-        <button onclick="this.parentElement.parentElement.remove()" style="background:#EA580C;color:white;padding:0.75rem 2rem;border-radius:0.5rem;border:none;font-weight:600;cursor:pointer;font-size:1rem;margin-top:1rem">Aceptar</button>
-      </div>
-    `;
-    document.body.appendChild(modal);
-    setTimeout(() => modal.remove(), 15000);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -422,7 +333,6 @@ export default function AdminCursosPage() {
           <button
             onClick={() => {
               setMostrarFormulario(!mostrarFormulario);
-              setMostrarGeneradorIA(false);
               if (mostrarFormulario) setModoEdicion(null);
             }}
             className="bg-primary-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-primary-700 transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl"
@@ -430,26 +340,7 @@ export default function AdminCursosPage() {
             {mostrarFormulario ? <X className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
             {mostrarFormulario ? 'Cancelar' : 'Crear Nuevo Curso'}
           </button>
-
-          <button
-            onClick={() => {
-              setMostrarGeneradorIA(!mostrarGeneradorIA);
-              setMostrarFormulario(false);
-              setModoEdicion(null);
-            }}
-            className="bg-secondary-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-secondary-700 transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl"
-          >
-            {mostrarGeneradorIA ? <X className="h-5 w-5" /> : <Sparkles className="h-5 w-5" />}
-            {mostrarGeneradorIA ? 'Cancelar' : 'Generar con IA desde PDF'}
-          </button>
         </div>
-
-        {}
-        {mostrarGeneradorIA && (
-          <div className="mb-8">
-            <GeneradorCursoPDF onCursoGenerado={handleCursoGeneradoIA} />
-          </div>
-        )}
 
         {}
         {mostrarFormulario && (
@@ -769,9 +660,11 @@ export default function AdminCursosPage() {
                           onClick={() => {
                             try {
                               console.log('Curso a editar:', curso);
+                              console.log('📦 curso.bloques RAW:', curso.bloques, 'tipo:', typeof curso.bloques);
                               const bloquesData = curso.bloques && typeof curso.bloques === 'string' && curso.bloques.trim() !== '' 
                                 ? JSON.parse(curso.bloques) 
                                 : [];
+                              console.log('🔄 Cargando curso para editar - bloques encontrados:', bloquesData.length, bloquesData);
                               const evaluacionesData = curso.evaluaciones && typeof curso.evaluaciones === 'string' && curso.evaluaciones.trim() !== ''
                                 ? JSON.parse(curso.evaluaciones)
                                 : [];
@@ -793,6 +686,7 @@ export default function AdminCursosPage() {
                                 certificadoTemplate: curso.certificado_template || curso.certificadoTemplate || ''
                               });
                               setBloques(bloquesData);
+                              console.log('✅ setBloques llamado con:', bloquesData.length, 'bloques');
                               setModoEdicion(curso.id);
                               setMostrarFormulario(true);
                               window.scrollTo({ top: 0, behavior: 'smooth' });

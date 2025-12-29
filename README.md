@@ -2,6 +2,20 @@
 
 Plataforma educativa para gestión de cursos, inscripciones y certificados.
 
+## 🌐 Acceso a la Plataforma
+
+- **Sitio Web**: https://academia-santafe.vercel.app
+- **Admin de Cursos**: https://academia-santafe.vercel.app/AdminCursos
+
+### 🔑 URLs Importantes:
+```
+Home: https://academia-santafe.vercel.app
+Lista de Cursos: https://academia-santafe.vercel.app/cursos
+Agregar/Editar Cursos: https://academia-santafe.vercel.app/AdminCursos
+Panel Admin: https://academia-santafe.vercel.app/admin
+Reportes: https://academia-santafe.vercel.app/admin/reportes
+```
+
 ## 🚀 Tecnologías
 
 - **Next.js 14** - Framework de React

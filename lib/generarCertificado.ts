@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+// import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 export const generarCertificado = async (
   nombreEstudiante: string,
   nombreCurso: string,
@@ -8,22 +8,11 @@ export const generarCertificado = async (
   plantillaUrl?: string,
   documentoEstudiante?: string
 ): Promise<Blob> => {
-  if (plantillaUrl) {
-    const esPDF = plantillaUrl.startsWith('data:application/pdf') || plantillaUrl.endsWith('.pdf');
-    try {
-      if (esPDF) {
-        return await generarCertificadoDesdePDF(nombreEstudiante, nombreCurso, instructor, fechaCompletado, plantillaUrl, documentoEstudiante);
-      } else {
-        return await generarCertificadoDesdeImagen(nombreEstudiante, nombreCurso, instructor, fechaCompletado, plantillaUrl, documentoEstudiante);
-      }
-    } catch (error) {
-      console.error('Error al usar plantilla, usando diseño por defecto:', error);
-      return generarCertificadoPorDefecto(nombreEstudiante, nombreCurso, instructor, fechaCompletado, documentoEstudiante);
-    }
-  } else {
-    return generarCertificadoPorDefecto(nombreEstudiante, nombreCurso, instructor, fechaCompletado, documentoEstudiante);
-  }
+  // Siempre usar certificado por defecto ya que pdf-lib fue desinstalado
+  return generarCertificadoPorDefecto(nombreEstudiante, nombreCurso, instructor, fechaCompletado, documentoEstudiante);
 };
+
+/* FUNCIONES DESHABILITADAS - pdf-lib fue desinstalado
 async function generarCertificadoDesdePDF(
   nombreEstudiante: string,
   nombreCurso: string,
@@ -220,6 +209,8 @@ async function generarCertificadoDesdeImagen(
   URL.revokeObjectURL(url);
   return blob;
 }
+*/
+
 function generarCertificadoPorDefecto(
   nombreEstudiante: string,
   nombreCurso: string,

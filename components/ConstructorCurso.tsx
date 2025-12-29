@@ -1,6 +1,10 @@
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import { Plus, Trash2, ChevronUp, ChevronDown, FileText, Video, CheckSquare, Book, AlertCircle } from 'lucide-react';
+import 'react-quill/dist/quill.snow.css';
+
+const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 export type TipoBloque = 'lectura' | 'video' | 'evaluacion' | 'documento';
 export interface BloqueContenido {
   id: string;
@@ -30,6 +34,7 @@ interface Props {
 }
 export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
   const [bloqueSeleccionado, setBloqueSeleccionado] = useState<BloqueContenido | null>(null);
+  const [modoVistaPrevia, setModoVistaPrevia] = useState<boolean>(false);
   const [modoCreacionPreguntas, setModoCreacionPreguntas] = useState<'ia' | 'manual'>('manual');
   const [preguntasIA, setPreguntasIA] = useState({
     opcion2: 0,  // V/F or 2 options
@@ -40,6 +45,31 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
   const [preguntasGeneradas, setPreguntasGeneradas] = useState<any[]>([]);
   const [generandoPreguntasIA, setGenerandoPreguntasIA] = useState(false);
   const [preguntaEditando, setPreguntaEditando] = useState<any>(null);
+
+  // Configuración del editor Quill
+  const quillModules = useMemo(() => ({
+    toolbar: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'color': [] }, { 'background': [] }],
+      [{ 'align': [] }],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      ['link', 'image'],
+      ['clean']
+    ]
+  }), []);
+
+  const quillFormats = [
+    'header',
+    'bold', 'italic', 'underline', 'strike',
+    'color', 'background',
+    'align',
+    'list', 'bullet',
+    'link', 'image'
+  ];
+
+  // Debug: log cuando cambien los bloques
+  console.log('🔧 ConstructorCurso - bloques recibidos:', bloques?.length || 0, bloques);
   const agregarBloque = (tipo: TipoBloque) => {
     const nuevoBloque: BloqueContenido = {
       id: Date.now().toString(),
@@ -369,105 +399,85 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
               {bloqueSeleccionado.tipo === 'lectura' && (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Contenido de la Lectura *
-                    </label>
-                    <textarea
-                      value={bloqueSeleccionado.contenido || ''}
-                      onChange={(e) => actualizarBloque({ ...bloqueSeleccionado, contenido: e.target.value })}
-                      rows={8}
-                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none resize-none"
-                      placeholder="Escribe el contenido de la lectura aquí..."
-                    />
-                    <p className="text-xs text-gray-500 mt-2">
-                      💡 Tip: Puedes usar Markdown para formatear el texto. Para agregar imágenes usa: ![texto](url-de-imagen)
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Imágenes en esta Lectura
-                    </label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-semibold text-gray-700">
+                        Contenido de la Lectura *
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setModoVistaPrevia(!modoVistaPrevia)}
+                        className="px-3 py-1 text-xs font-semibold rounded-lg transition-colors"
+                        style={{
+                          backgroundColor: modoVistaPrevia ? '#10b981' : '#6b7280',
+                          color: 'white'
+                        }}
+                      >
+                        {modoVistaPrevia ? '👁️ Vista Previa' : '✏️ Editar HTML'}
+                      </button>
+                    </div>
                     
-                    {(() => {
-                      // Extraer todas las imágenes del contenido HTML
-                      const contenido = bloqueSeleccionado.contenido || '';
-                      const imgRegex = /<img[^>]+src="([^"]+)"[^>]*>/g;
-                      const imagenes: string[] = [];
-                      let match;
-                      while ((match = imgRegex.exec(contenido)) !== null) {
-                        imagenes.push(match[1]);
-                      }
-                      
-                      return (
-                        <>
-                          {imagenes.length > 0 && (
-                            <div className="grid grid-cols-3 gap-3 mb-4 p-4 border-2 border-orange-200 bg-orange-50 rounded-xl">
-                              {imagenes.map((imgSrc, idx) => (
-                                <div key={idx} className="relative group">
-                                  <img 
-                                    src={imgSrc}
-                                    alt={`Imagen ${idx + 1}`}
-                                    className="w-full h-24 object-cover rounded-lg border-2 border-gray-300"
-                                    onError={(e) => {
-                                      (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23ddd" width="100" height="100"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EImagen%3C/text%3E%3C/svg%3E';
-                                    }}
-                                  />
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      // Eliminar esta imagen del contenido HTML
-                                      const imgTag = contenido.match(new RegExp(`<img[^>]+src="${imgSrc.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"[^>]*>`))?.[0];
-                                      if (imgTag) {
-                                        const nuevoContenido = contenido.replace(imgTag, '');
-                                        actualizarBloque({ ...bloqueSeleccionado, contenido: nuevoContenido });
-                                      }
-                                    }}
-                                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                                  >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                  </button>
-                                  <span className="absolute bottom-1 left-1 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
-                                    #{idx + 1}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                          
-                          <div className="border-2 border-dashed border-gray-300 rounded-xl p-4">
-                            <input
-                              type="url"
-                              placeholder="URL de la imagen o PDF (ej: https://ejemplo.com/imagen.jpg)"
-                              className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none mb-2"
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  const url = (e.target as HTMLInputElement).value;
-                                  if (url) {
-                                    const isPdf = url.toLowerCase().endsWith('.pdf');
-                                    let nuevoContenido = bloqueSeleccionado.contenido || '';
-                                    if (isPdf) {
-                                      nuevoContenido += `\n<p style="text-align:center;margin:1.5rem 0"><a href="${url}" target="_blank" style="color:#EA580C;font-weight:600">📄 Ver PDF</a></p>\n`;
-                                    } else {
-                                      nuevoContenido += `\n<p style="text-align:center;margin:1.5rem 0"><img src="${url}" style="max-width:100%;height:auto;border-radius:0.5rem;box-shadow:0 4px 6px rgba(0,0,0,0.1)" alt="Imagen agregada" /></p>\n`;
-                                    }
-                                    actualizarBloque({ 
-                                      ...bloqueSeleccionado, 
-                                      contenido: nuevoContenido
-                                    });
-                                    (e.target as HTMLInputElement).value = '';
-                                  }
-                                }
-                              }}
-                            />
-                            <p className="text-xs text-gray-500">
-                              📎 Pega la URL de tu imagen o PDF y presiona Enter para agregarla al contenido
-                            </p>
-                          </div>
-                        </>
-                      );
-                    })()}
+                    {modoVistaPrevia ? (
+                      <div 
+                        className="w-full bg-white rounded-xl p-8 border-2 border-gray-200 overflow-auto"
+                        style={{ 
+                          minHeight: '400px',
+                          maxHeight: '600px'
+                        }}
+                      >
+                        <style dangerouslySetInnerHTML={{__html: `
+                          .vista-previa-contenido h3 {
+                            font-size: 1.5rem;
+                            font-weight: 700;
+                            color: #1f2937;
+                            margin-top: 2rem;
+                            margin-bottom: 1rem;
+                          }
+                          .vista-previa-contenido p {
+                            font-size: 1rem;
+                            line-height: 1.8;
+                            color: #374151;
+                            margin: 1.25rem 0;
+                          }
+                          .vista-previa-contenido ul {
+                            margin: 1rem 0;
+                            padding-left: 2rem;
+                            list-style-type: disc;
+                          }
+                          .vista-previa-contenido li {
+                            font-size: 1rem;
+                            line-height: 1.8;
+                            color: #374151;
+                            margin: 0.75rem 0;
+                          }
+                          .vista-previa-contenido img {
+                            max-width: 100%;
+                            height: auto;
+                            margin: 2rem auto;
+                            border-radius: 0.5rem;
+                            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                            display: block;
+                          }
+                        `}} />
+                        <div className="vista-previa-contenido" dangerouslySetInnerHTML={{ __html: bloqueSeleccionado.contenido || '<p style="color:#999">Sin contenido</p>' }} />
+                      </div>
+                    ) : (
+                      <div className="border-2 border-gray-200 rounded-xl overflow-hidden">
+                        <ReactQuill
+                          theme="snow"
+                          value={bloqueSeleccionado.contenido || ''}
+                          onChange={(content) => actualizarBloque({ ...bloqueSeleccionado, contenido: content })}
+                          modules={quillModules}
+                          formats={quillFormats}
+                          placeholder="Escribe el contenido de la lectura aquí..."
+                          className="bg-white"
+                          style={{ minHeight: '300px' }}
+                        />
+                      </div>
+                    )}
+                    
+                    <p className="text-xs text-gray-500 mt-2">
+                      💡 Usa la barra de herramientas para formatear: negrita, colores, imágenes, etc.
+                    </p>
                   </div>
                 </div>
               )}
@@ -477,6 +487,22 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                     URL del Video (YouTube) *
                   </label>
                   <input
+                    type="text"
+                    value={bloqueSeleccionado.videoUrl || ''}
+                    onChange={(e) => actualizarBloque({ ...bloqueSeleccionado, videoUrl: e.target.value })}
+                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+                    placeholder="https://youtube.com/watch?v=..."
+                  />
+                </div>
+              )}
+              {bloqueSeleccionado.tipo === 'documento' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Subir Documento PDF *
+                    </label>
+                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-primary-500 transition-colors">
+                      <input
                     type="text"
                     value={bloqueSeleccionado.videoUrl || ''}
                     onChange={(e) => actualizarBloque({ ...bloqueSeleccionado, videoUrl: e.target.value })}
@@ -1013,7 +1039,7 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
           )}
         </div>
       </div>
-      {}
+      
       {preguntaEditando && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
