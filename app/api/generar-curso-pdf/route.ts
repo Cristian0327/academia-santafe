@@ -83,12 +83,10 @@ export async function POST(request: NextRequest) {
     
     console.log(`Imágenes extraídas: ${imagenesExtraidas.length}`);
 
-    // Inicializar Gemini
     const apiKey1 = process.env.GEMINI_API_KEY;
     const apiKey2 = process.env.GEMINI_API_KEY_2;
     const genAI = new GoogleGenerativeAI(apiKey1 || apiKey2!);
 
-    // Crear prompt simplificado que evita JSON inválido
     const prompt = `Analiza estos ${pdfBuffers.length} PDF(s) y genera un curso.
 
 REGLAS CRÍTICAS - LEE ESTO PRIMERO:
@@ -140,7 +138,7 @@ INSTRUCCIONES DE ORGANIZACIÓN:
 
 RECUERDA: Tu función NO es resumir, es ORGANIZAR el contenido completo en bloques educativos.`;
 
-    // Enviar todos los PDFs a Gemini
+
     const parts: any[] = [];
     pdfBuffers.forEach((buffer, idx) => {
       parts.push({
@@ -154,7 +152,6 @@ RECUERDA: Tu función NO es resumir, es ORGANIZAR el contenido completo en bloqu
 
     console.log('Enviando a Gemini...');
     
-    // Intentar con la API key 1, si falla usar la API key 2
     let result;
     try {
       const model1 = genAI.getGenerativeModel({ 
@@ -189,7 +186,6 @@ RECUERDA: Tu función NO es resumir, es ORGANIZAR el contenido completo en bloqu
     
     console.log('Respuesta recibida, parseando...');
     
-    // Parsear el formato personalizado (mucho más robusto que JSON)
     const cursoGenerado = parsearRespuestaIA(text);
     
     // Distribuir imágenes entre las lecciones
@@ -266,7 +262,7 @@ function parsearRespuestaIA(text: string): any {
     return match ? match[1].trim() : '';
   };
 
-  curso.titulo = extraer('TITULO') || 'Curso Generado por IA';
+  curso.titulo = extraer('TITULO') || 'Curso Generado';
   curso.descripcion = extraer('DESCRIPCION') || 'Curso generado automáticamente desde PDF';
   curso.instructor = extraer('INSTRUCTOR') || 'Coordinador SST';
   curso.categoria = extraer('CATEGORIA') || 'General';
