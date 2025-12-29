@@ -503,22 +503,6 @@ export default function ConstructorCurso({ bloques, onBloquesChange }: Props) {
                     </label>
                     <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-primary-500 transition-colors">
                       <input
-                    type="text"
-                    value={bloqueSeleccionado.videoUrl || ''}
-                    onChange={(e) => actualizarBloque({ ...bloqueSeleccionado, videoUrl: e.target.value })}
-                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
-                    placeholder="https://youtube.com/watch?v=..."
-                  />
-                </div>
-              )}
-              {bloqueSeleccionado.tipo === 'documento' && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Subir Documento PDF *
-                    </label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-primary-500 transition-colors">
-                      <input
                         type="file"
                         accept=".pdf,application/pdf"
                         onChange={(e) => {
