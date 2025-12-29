@@ -38,23 +38,34 @@ export default function HomePage() {
     };
     const cargarEstadisticas = async () => {
       try {
+        console.log('🔄 Cargando estadísticas...');
         const cursosData = await apiClient.listarCursos();
+        console.log('📚 Cursos obtenidos:', cursosData);
         const cursosCount = cursosData.length;
-        const { data: estudiantes } = await supabase.from('estudiantes').select('documento');
+        
+        const { data: estudiantes, error: estudiantesError } = await supabase.from('estudiantes').select('documento');
+        if (estudiantesError) console.error('Error estudiantes:', estudiantesError);
         const estudiantesCount = estudiantes?.length || 0;
-        const { data: evaluaciones } = await supabase.from('evaluaciones').select('calificacion');
+        
+        const { data: evaluaciones, error: evaluacionesError } = await supabase.from('evaluaciones').select('calificacion');
+        if (evaluacionesError) console.error('Error evaluaciones:', evaluacionesError);
+        
         let satisfaccionPromedio = 0;
         if (evaluaciones && evaluaciones.length > 0) {
           const suma = evaluaciones.reduce((acc: number, ev: any) => acc + (ev.calificacion || 0), 0);
           satisfaccionPromedio = Math.round((suma / evaluaciones.length / 100) * 100);
         }
-        setStats({
+        
+        const nuevasStats = {
           cursos: cursosCount,
           estudiantes: estudiantesCount,
           satisfaccion: satisfaccionPromedio
-        });
+        };
+        
+        console.log('📊 Estadísticas calculadas:', nuevasStats);
+        setStats(nuevasStats);
       } catch (error) {
-        console.error('Error al cargar estadísticas:', error);
+        console.error('❌ Error al cargar estadísticas:', error);
         setStats({ cursos: 0, estudiantes: 0, satisfaccion: 0 });
       }
     };
@@ -175,33 +186,33 @@ export default function HomePage() {
       {}
       <section className="py-12 bg-white border-y border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-3 gap-8">
+          <div className="grid grid-cols-3 gap-4 sm:gap-8">
             <div className="text-center">
-              <div className="flex items-center justify-center mb-2">
-                <BookOpen className="h-8 w-8 text-primary-600 mr-2" />
-                <div className="text-5xl font-bold text-primary-600">
-                  {stats.cursos}+
+              <div className="flex flex-col sm:flex-row items-center justify-center mb-2 gap-1 sm:gap-0">
+                <BookOpen className="h-6 w-6 sm:h-8 sm:w-8 text-primary-600 sm:mr-2" />
+                <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary-600">
+                  {stats.cursos > 0 ? `${stats.cursos}+` : '0+'}
                 </div>
               </div>
-              <p className="text-gray-600 font-semibold">Cursos</p>
+              <p className="text-xs sm:text-sm md:text-base text-gray-600 font-semibold">Cursos</p>
             </div>
             <div className="text-center border-x border-gray-200">
-              <div className="flex items-center justify-center mb-2">
-                <Users className="h-8 w-8 text-primary-600 mr-2" />
-                <div className="text-5xl font-bold text-primary-600">
-                  {stats.estudiantes}+
+              <div className="flex flex-col sm:flex-row items-center justify-center mb-2 gap-1 sm:gap-0">
+                <Users className="h-6 w-6 sm:h-8 sm:w-8 text-primary-600 sm:mr-2" />
+                <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary-600">
+                  {stats.estudiantes > 0 ? `${stats.estudiantes}+` : '0+'}
                 </div>
               </div>
-              <p className="text-gray-600 font-semibold">Estudiantes</p>
+              <p className="text-xs sm:text-sm md:text-base text-gray-600 font-semibold">Estudiantes</p>
             </div>
             <div className="text-center">
-              <div className="flex items-center justify-center mb-2">
-                <TrendingUp className="h-8 w-8 text-primary-600 mr-2" />
-                <div className="text-5xl font-bold text-primary-600">
+              <div className="flex flex-col sm:flex-row items-center justify-center mb-2 gap-1 sm:gap-0">
+                <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-primary-600 sm:mr-2" />
+                <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary-600">
                   {stats.satisfaccion}%
                 </div>
               </div>
-              <p className="text-gray-600 font-semibold">Satisfacción</p>
+              <p className="text-xs sm:text-sm md:text-base text-gray-600 font-semibold">Satisfacción</p>
             </div>
           </div>
         </div>
@@ -210,38 +221,38 @@ export default function HomePage() {
       <section className="py-20 bg-white animate-fade-in" style={{ animationDelay: '0.2s' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4">
               ¿Por qué elegir Academia Santafé?
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto px-4">
               Plataforma diseñada para el crecimiento profesional de nuestros colaboradores
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="group bg-secondary-500 rounded-2xl p-8 text-white shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 scroll-reveal">
-              <div className="bg-white/20 w-16 h-16 rounded-xl flex items-center justify-center mb-6 icon-container">
-                <BookOpen className="h-8 w-8 icon-animate" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+            <div className="group bg-secondary-500 rounded-2xl p-6 sm:p-8 text-white shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 scroll-reveal">
+              <div className="bg-white/20 w-14 h-14 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center mb-4 sm:mb-6 icon-container">
+                <BookOpen className="h-7 w-7 sm:h-8 sm:w-8 icon-animate" />
               </div>
-              <h3 className="text-2xl font-bold mb-4">Contenido de Calidad</h3>
-              <p className="text-white/90">
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Contenido de Calidad</h3>
+              <p className="text-white/90 text-sm sm:text-base">
                 Cursos diseñados por expertos de la industria, actualizados constantemente con las mejores prácticas.
               </p>
             </div>
-            <div className="group bg-primary-500 rounded-2xl p-8 text-white shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 scroll-reveal">
-              <div className="bg-white/20 w-16 h-16 rounded-xl flex items-center justify-center mb-6 icon-container">
-                <Clock className="h-8 w-8 icon-animate" />
+            <div className="group bg-primary-500 rounded-2xl p-6 sm:p-8 text-white shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 scroll-reveal">
+              <div className="bg-white/20 w-14 h-14 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center mb-4 sm:mb-6 icon-container">
+                <Clock className="h-7 w-7 sm:h-8 sm:w-8 icon-animate" />
               </div>
-              <h3 className="text-2xl font-bold mb-4">Horarios Flexibles</h3>
-              <p className="text-white/90">
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Horarios Flexibles</h3>
+              <p className="text-white/90 text-sm sm:text-base">
                 Aprende cuando quieras, desde donde quieras. Compatibiliza tu formación con tu trabajo diario.
               </p>
             </div>
-            <div className="group bg-secondary-500 rounded-2xl p-8 text-white shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 scroll-reveal">
-              <div className="bg-white/20 w-16 h-16 rounded-xl flex items-center justify-center mb-6 icon-container">
-                <GraduationCap className="h-8 w-8 icon-animate" />
+            <div className="group bg-secondary-500 rounded-2xl p-6 sm:p-8 text-white shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 scroll-reveal sm:col-span-2 lg:col-span-1">
+              <div className="bg-white/20 w-14 h-14 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center mb-4 sm:mb-6 icon-container">
+                <GraduationCap className="h-7 w-7 sm:h-8 sm:w-8 icon-animate" />
               </div>
-              <h3 className="text-2xl font-bold mb-4">Certificaciones</h3>
-              <p className="text-white/90">
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Certificaciones</h3>
+              <p className="text-white/90 text-sm sm:text-base">
                 Obtén certificados oficiales que validan tus nuevas habilidades y conocimientos adquiridos.
               </p>
             </div>
@@ -259,7 +270,7 @@ export default function HomePage() {
               Explora nuestros cursos y comienza a desarrollar nuevas habilidades
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {cursos.length > 0 ? (
               cursos.map((curso, index) => (
                 <Link
@@ -268,7 +279,7 @@ export default function HomePage() {
                   className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 scroll-reveal"
                   style={{ animationDelay: `${index * 0.1}s` }}
                 >
-                  <div className="h-48 bg-primary-500 flex items-center justify-center relative">
+                  <div className="h-48 sm:h-52 bg-primary-500 flex items-center justify-center relative">
                     {curso.imagen_portada ? (
                       <img 
                         src={curso.imagen_portada} 
@@ -279,22 +290,22 @@ export default function HomePage() {
                       <BookOpen className="h-16 w-16 text-white opacity-80" />
                     )}
                   </div>
-                  <div className="p-6">
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="px-3 py-1 bg-secondary-100 text-secondary-700 rounded-full text-sm font-semibold">
+                  <div className="p-4 sm:p-6">
+                    <div className="flex items-center gap-2 mb-3 flex-wrap">
+                      <span className="px-2.5 py-1 bg-secondary-100 text-secondary-700 rounded-full text-xs sm:text-sm font-semibold">
                         {curso.categoria || 'General'}
                       </span>
                       {curso.nivel && (
-                        <span className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm font-semibold">
+                        <span className="px-2.5 py-1 bg-primary-100 text-primary-700 rounded-full text-xs sm:text-sm font-semibold">
                           {curso.nivel}
                         </span>
                       )}
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2">{curso.titulo}</h3>
-                    <p className="text-gray-600 mb-4 line-clamp-2">
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 line-clamp-2">{curso.titulo}</h3>
+                    <p className="text-sm sm:text-base text-gray-600 mb-4 line-clamp-2">
                       {curso.descripcion}
                     </p>
-                    <div className="flex items-center justify-between text-sm text-gray-500">
+                    <div className="flex items-center justify-between text-xs sm:text-sm text-gray-500">
                       <div className="flex items-center gap-1">
                         <Clock className="h-4 w-4" />
                         <span>{curso.duracion || 'Variable'}</span>
