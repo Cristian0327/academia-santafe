@@ -134,11 +134,11 @@ export default function CursoPage() {
   };
 
   const verificarClaveYMostrarModal = () => {
-    if (claveInput !== curso.claveInscripcion) {
+    const claveCurso = curso.claveInscripcion || curso.clave_inscripcion;
+    if (claveInput !== claveCurso) {
       alert('❌ Clave incorrecta. Solicita la clave a tu instructor.');
       return;
     }
-    
     // Clave correcta, mostrar modal para capturar datos
     setMostrarModalDatos(true);
   };
